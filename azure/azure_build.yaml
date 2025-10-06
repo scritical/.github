@@ -21,33 +21,27 @@ parameters:
 jobs:
   - job:
     pool:
-      vmImage: "ubuntu-22.04"
+      vmImage: "ubuntu-24.04"
     timeoutInMinutes: ${{ parameters.TIMEOUT }}
     strategy:
       matrix:
-        "u22-intel-impi-latest":
-          DOCKER_TAG: u22-intel-impi-latest
-          CONFIG_FILE: ${{ parameters.INTEL_CONFIG }}
-        "u24-intel-impi-latest":
-          DOCKER_TAG: u24-intel-impi-latest
-          CONFIG_FILE: ${{ parameters.INTEL_CONFIG }}
         "u24-gcc-ompi-latest":
           DOCKER_TAG: u24-gcc-ompi-latest
           CONFIG_FILE: ${{ parameters.GCC_CONFIG }}
-        "u22-gcc-ompi-stable":
-          DOCKER_TAG: u22-gcc-ompi-stable
-          CONFIG_FILE: ${{ parameters.GCC_CONFIG }}
+        # "u22-gcc-ompi-stable":
+        #   DOCKER_TAG: u22-gcc-ompi-stable
+        #   CONFIG_FILE: ${{ parameters.GCC_CONFIG }}
     variables:
       - group: Docker
       - group: Codecov
-      - name: MDOLAB_HOMEDIR
-        value: /home/mdolabuser
+      - name: SCRITICAL_HOMEDIR
+        value: /home/scriticaluser
       - name: DOCKER_WORKING_DIR
-        value: ${{ variables.MDOLAB_HOMEDIR }}/repos/${{ parameters.REPO_NAME }}
+        value: ${{ variables.SCRITICAL_HOMEDIR }}/repos/${{ parameters.REPO_NAME }}
       - name: DOCKER_MOUNT_DIR
-        value: ${{ variables.MDOLAB_HOMEDIR }}/azure/${{ parameters.REPO_NAME }}
+        value: ${{ variables.SCRITICAL_HOMEDIR }}/azure/${{ parameters.REPO_NAME }}
       - name: BASHRC
-        value: ${{ variables.MDOLAB_HOMEDIR }}/.bashrc_mdolab
+        value: ${{ variables.SCRITICAL_HOMEDIR }}/.bashrc_scritical
     steps:
       - checkout: self
       - checkout: azure_template
@@ -58,12 +52,12 @@ jobs:
           fi
           # "auto" pulls the private image for trusted builds
           if [[ "${{ parameters.IMAGE }}" == "private" ]] || [[ "${{ parameters.IMAGE }}" == "auto" && ! -z $(DOCKER_USERNAME) ]] ; then
-            export DOCKER_IMAGE=private;
+            export DOCKER_IMAGE=private-dev;
           else
-            export DOCKER_IMAGE=public;
+            export DOCKER_IMAGE=public-dev;
           fi
-          docker pull mdolab/$DOCKER_IMAGE:$(DOCKER_TAG);
-          docker run -t -d --name app --mount "type=bind,src=$(pwd)/${{ parameters.REPO_NAME }},target=${{ variables.DOCKER_MOUNT_DIR }}" mdolab/$DOCKER_IMAGE:$(DOCKER_TAG) /bin/bash;
+          docker pull scritical/$DOCKER_IMAGE:$(DOCKER_TAG);
+          docker run -t -d --name app --mount "type=bind,src=$(pwd)/${{ parameters.REPO_NAME }},target=${{ variables.DOCKER_MOUNT_DIR }}" scritical/$DOCKER_IMAGE:$(DOCKER_TAG) /bin/bash;
           docker exec app /bin/bash -c "rm -rf ${{ variables.DOCKER_WORKING_DIR }} && cp -r ${{ variables.DOCKER_MOUNT_DIR }} ${{ variables.DOCKER_WORKING_DIR }}";
         displayName: Prepare Repository
       - script: docker exec -e CONFIG_FILE=$(CONFIG_FILE) app /bin/bash -c ". ${{ variables.BASHRC }} && cd ${{ variables.DOCKER_WORKING_DIR }} && /bin/bash ${{ parameters.BUILD }}"

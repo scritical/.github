@@ -83,7 +83,7 @@ echo ""
 echo "Installing github actions runner"
 tar xzf ./actions-runner-linux-x64-2.303.0.tar.gz
 # Create the runner and start the configuration experience
-./config.sh --url https://github.com/mdolab --token $TOKEN --unattended
+./config.sh --url https://github.com/scriticalb --token $TOKEN --unattended
 # Set the runner as a service
 sudo ./svc.sh install
 # Start the service

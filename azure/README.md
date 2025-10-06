@@ -1,5 +1,7 @@
 # Azure
-The MDO Lab Azure Pipelines page is found on the [Azure Website](https://dev.azure.com/mdolab/) and is split into Public and Private projects, used accordingly for public and private repositories.
+The Supercritical Azure Pipelines page is found on the [Azure Website](https://dev.azure.com/scritical/).
+The process outlined here is split into Public and Private projects, used accordingly for public and private repositories.
+However, at the moment we only support Private projects, but the processes support public repositories.
 The pipelines for each repository can be found by selecting its parent project and then the pipelines button.
 Each pipeline is set up using the templates located in this `.github` repository so only configuration files are needed in each repository.
 
@@ -42,7 +44,7 @@ The templates are organized into the following files:
 2. Add triggers (see example below)
  	- Only set triggers for the `main` branch and pull requests to `main`
 3. Add resources (see example below)
-	- This resource pulls the `azure_template` from the `mdolab/.github` repository
+	- This resource pulls the `azure_template` from the `scritical/.github` repository
 4. Add parameters (see example below and the options table above)
 
 ```
@@ -56,8 +58,8 @@ resources:
   repositories:
   - repository: azure_template
     type: github
-    name: mdolab/.github
-    endpoint: mdolab
+    name: scritical/.github
+    endpoint: scritical
 
 extends:
   template: azure/azure_template.yaml@azure_template
@@ -101,16 +103,16 @@ set -e
 testflo -v . -n 1
 ```
 
-### Step 4: Push branch to `mdolab/` repository and create pull request
+### Step 4: Push branch to `scritical/` repository and create pull request
 
-1. Push branch directly to `mdolab` repository, not your personal fork
+1. Push branch directly to `scritical` repository, not your personal fork
 
 ### Step 5: Create new Pipeline on Microsoft Azure
 
-1. Go to [Azure Pipelines](https://dev.azure.com/mdolab/) and select public / private as needed by current repository
+1. Go to [Azure Pipelines](https://dev.azure.com/scritical/) and select public / private as needed by current repository
 2. Select "Pipelines" and "New pipeline"
 3. Select "Github" and authorize the Azure Pipeline app if you have not already
-4. Select correct mdolab repository (again, not personal fork)
+4. Select correct scritical repository (again, not personal fork)
 5. Select "Existing Azure Pipelines YAML file"
 6. In pop-up menu, set "Branch" to your new Azure-transition branch and "Path" to `.github/azure-pipelines.yaml`
 7. Click "continue"
@@ -148,8 +150,8 @@ resources:
   repositories:
   - repository: azure_template
     type: github
-    name: mdolab/.github
-    endpoint: mdolab
+    name: scritical/.github
+    endpoint: scritical
 
 stages:
 - template: azure/azure_template.yaml@azure_template

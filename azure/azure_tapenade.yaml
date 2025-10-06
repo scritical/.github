@@ -21,7 +21,7 @@ jobs:
           jdkSourceOption: "PreInstalled"
       - script: |
           if [[ "${{ parameters.TAPENADE_VERSION }}" == "3.10" ]]; then
-            export TAPENADE_URL=http://umich.edu/~mdolaboratory/misc/tapenade3.10.tar
+            export TAPENADE_URL=https://websites.umich.edu/~mdolaboratory/misc/tapenade3.10.tar
             export TAPENADE_HOME=$(pwd)/tapenade${{ parameters.TAPENADE_VERSION }}
           elif [[ "${{ parameters.TAPENADE_VERSION }}" == "3.16" ]]; then
             # The following link corresponds to tapenade_3.16-v2-723-ge8da61555.tar

@@ -27,7 +27,7 @@ fi
 
 # get all repos
 # this relies on an authenticated gh session
-gh api graphql -F owner='mdolab' -f query='
+gh api graphql -F owner='scritical' -f query='
   query($owner: String!) {
     organization(login: $owner) {
       repositories(first: 100) {

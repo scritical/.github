@@ -118,7 +118,7 @@ for repo in ${REPOS[@]}; do
     REPODIR="$WORKDIR/$repo"
     echo ""
     echo "---------------- Updating $repo ------------------------"
-    git clone git@github.com:mdolab/"$repo".git
+    git clone git@github.com:scritical/"$repo".git
     checkFailure $? $repo || continue
 
     cd $REPODIR

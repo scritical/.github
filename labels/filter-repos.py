@@ -9,7 +9,7 @@ with open(args.filename) as f:
     data = json.load(f)
 
 # the .github repo doesn't appear somehow
-repos = ["mdolab/.github"]
+repos = ["scritical/.github"]
 
 # remove archived repos
 # or ones with the 'paper' tag

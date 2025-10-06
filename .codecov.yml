@@ -2,7 +2,7 @@ codecov:
   disable_default_path_fixes: true
 
 fixes:
-  - "/home/mdolabuser/repos/::"
+  - "/home/scriticaluser/repos/::"
   - "**/site-packages/::"
 
 coverage:
