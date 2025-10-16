@@ -28,7 +28,7 @@ parameters:
     default: .github/test_complex.sh
   - name: IMAGE
     type: string
-    default: public
+    default: private
   - name: COVERAGE
     type: boolean
     default: false
