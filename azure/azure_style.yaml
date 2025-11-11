@@ -23,6 +23,12 @@ parameters:
   - name: FPRETTIFY
     type: boolean
     default: false
+  - name: RUFF
+    type: boolean
+    default: false
+  - name: MYPY
+    type: boolean
+    default: false
 jobs:
   - job: base_format_and_lint
     pool:
@@ -152,5 +158,27 @@ jobs:
 
           # Exit with an error if any of the tracked files changed
           git diff --summary --exit-code
+
+  - job: mypy
+    pool:
+      vmImage: "ubuntu-22.04"
+    timeoutInMinutes: ${{ parameters.TIMEOUT }}
+    continueOnError: ${{ parameters.IGNORE_STYLE }}
+    condition: ${{ parameters.MYPY }}
+    steps:
+      - checkout: self
+      - checkout: azure_template
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.11"
+      - script: |
+          cd ${{ parameters.REPO_NAME }}
+
+          pip install wheel
+          pip install mypy
+
+          # Run mypy check and print to screen
+          mypy --any-exprs-report mypy-output .
+          cat mypy-output/any-exprs.txt
 
 

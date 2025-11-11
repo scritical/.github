@@ -57,6 +57,9 @@ parameters:
   - name: RUFF
     type: boolean
     default: false
+  - name: MYPY
+    type: boolean
+    default: false
   # Tapenade
   - name: TAPENADE
     type: boolean
