@@ -23,9 +23,6 @@ parameters:
   - name: FPRETTIFY
     type: boolean
     default: false
-  - name: RUFF
-    type: boolean
-    default: false
   - name: MYPY
     type: boolean
     default: false
