@@ -175,7 +175,6 @@ jobs:
           pip install mypy
 
           # Run mypy check and print to screen
-          mypy --any-exprs-report mypy-output .
-          cat mypy-output/any-exprs.txt
+          mypy .
 
 
