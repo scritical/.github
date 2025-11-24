@@ -1,0 +1,61 @@
+name: Branch Name Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - main
+      - dev
+      - 'client-*'
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name for main
+        if: github.base_ref == 'main'
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Source branch: $BRANCH_NAME"
+          echo "Target branch: ${{ github.base_ref }}"
+
+          if [[ $BRANCH_NAME == dev ]] || [[ $BRANCH_NAME == hotfix-* ]]; then
+            echo "Branch name is valid"
+            exit 0
+          else
+            echo "Invalid branch name for main pull request"
+            echo "Branch name must be dev or start with 'hotfix-'"
+            exit 1
+          fi
+
+      - name: Check branch name for dev
+        if: github.base_ref == 'dev'
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Source branch: $BRANCH_NAME"
+          echo "Target branch: ${{ github.base_ref }}"
+
+          if [[ $BRANCH_NAME == hotfix-* ]] || [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]]; then
+            echo "Branch name is valid"
+            exit 0
+          else
+            echo "Invalid branch name for dev pull request"
+            echo "Branch name must start with 'hotfix-', 'feature-', or 'bugfix-'"
+            exit 1
+          fi
+      
+      - name: Check branch name for client branches
+        if: startsWith(github.base_ref, 'client-')
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Source branch: $BRANCH_NAME"
+          echo "Target branch: ${{ github.base_ref }}"
+
+          if [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]] || [[ $BRANCH_NAME == hotfix-* ]]; then
+            echo "Branch name is valid"
+            exit 0
+          else
+            echo "Invalid branch name for client pull request"
+            echo "Branch name must start with 'feature-', 'bugfix-', or 'hotfix-'"
+            exit 1
+          fi
