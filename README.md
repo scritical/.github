@@ -7,6 +7,7 @@ This repo stores the following shared repository settings/configurations/templat
   - `isort`
   - `pylint`
   - `codecov`
+  - `mypy`
 - Shared configurations for Azure Pipelines
 - Shared configurations for GitHub Actions
 - Issue/PR labels shared across the organization
