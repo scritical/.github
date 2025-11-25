@@ -42,6 +42,9 @@ parameters:
   - name: IGNORE_STYLE
     type: boolean
     default: false
+  - name: BASE_FORMAT_AND_LINT
+    type: boolean
+    default: true
   - name: ISORT
     type: boolean
     default: false
@@ -54,7 +57,7 @@ parameters:
   - name: FPRETTIFY
     type: boolean
     default: false
-  - name: RUFF
+  - name: MYPY
     type: boolean
     default: false
   # Tapenade
@@ -115,10 +118,12 @@ stages:
           REPO_NAME: ${{ parameters.REPO_NAME }}
           TIMEOUT: ${{ parameters.TIMEOUT_STYLE }}
           IGNORE_STYLE: ${{ parameters.IGNORE_STYLE }}
+          BASE_FORMAT_AND_LINT: ${{ parameters.BASE_FORMAT_AND_LINT }}
           ISORT: ${{ parameters.ISORT }}
           PYLINT: ${{ parameters.PYLINT }}
           CLANG_FORMAT: ${{ parameters.CLANG_FORMAT }}
           FPRETTIFY: ${{ parameters.FPRETTIFY }}
+          MYPY: ${{ parameters.MYPY }}
 
   - stage: Tapenade
     dependsOn: []
