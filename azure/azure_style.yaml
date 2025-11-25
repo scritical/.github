@@ -174,7 +174,7 @@ jobs:
           pip install wheel
           pip install mypy
 
-          # Run mypy check and print to screen
-          mypy .
+          # Run mypy check (should pick up local config from mypy.ini or .mypy.ini if present)
+          mypy
 
 
