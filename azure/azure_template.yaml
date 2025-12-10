@@ -116,6 +116,7 @@ stages:
       - template: azure_style.yaml
         parameters:
           REPO_NAME: ${{ parameters.REPO_NAME }}
+          IMAGE: ${{ parameters.IMAGE }}
           TIMEOUT: ${{ parameters.TIMEOUT_STYLE }}
           IGNORE_STYLE: ${{ parameters.IGNORE_STYLE }}
           BASE_FORMAT_AND_LINT: ${{ parameters.BASE_FORMAT_AND_LINT }}

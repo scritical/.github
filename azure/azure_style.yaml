@@ -1,6 +1,8 @@
 parameters:
   - name: REPO_NAME
     type: string
+  - name: IMAGE
+    type: string
   # The following parameters have defaults because this template could be used by repos directly
   - name: TIMEOUT
     type: number
@@ -162,6 +164,20 @@ jobs:
     timeoutInMinutes: ${{ parameters.TIMEOUT }}
     continueOnError: ${{ parameters.IGNORE_STYLE }}
     condition: ${{ parameters.MYPY }}
+    strategy:
+      matrix:
+        "u24-gcc-ompi-latest":
+          DOCKER_TAG: u24-gcc-ompi-latest
+    variables:
+      - group: Docker
+      - name: SCRITICAL_HOMEDIR
+        value: /home/scriticaluser
+      - name: DOCKER_WORKING_DIR
+        value: ${{ variables.SCRITICAL_HOMEDIR }}/repos/${{ parameters.REPO_NAME }}
+      - name: DOCKER_MOUNT_DIR
+        value: ${{ variables.SCRITICAL_HOMEDIR }}/azure/${{ parameters.REPO_NAME }}
+      - name: BASHRC
+        value: ${{ variables.SCRITICAL_HOMEDIR }}/.bashrc_scritical
     steps:
       - checkout: self
       - checkout: azure_template
@@ -169,17 +185,24 @@ jobs:
         inputs:
           versionSpec: "3.11"
       - script: |
-          cd ${{ parameters.REPO_NAME }}
-
-          pip install wheel
-          pip install mypy
-
-          # Check if the local repo has a requirements.txt file and install it if present
-          if [[ -f "requirements.txt" ]]; then
-            pip install -r requirements.txt
+          # This is a trusted build if DOCKER_USERNAME is defined
+          if [[ ! -z $(DOCKER_USERNAME) ]] ; then
+            echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin;
           fi
-
-          # Run mypy check (should pick up local config from mypy.ini or .mypy.ini if present)
-          mypy
+          # "auto" pulls the private image for trusted builds
+          if [[ "${{ parameters.IMAGE }}" == "private" ]] || [[ "${{ parameters.IMAGE }}" == "auto" && ! -z $(DOCKER_USERNAME) ]] ; then
+            export DOCKER_IMAGE=private-dev;
+          else
+            export DOCKER_IMAGE=public-dev;
+          fi
+          docker pull scritical/$DOCKER_IMAGE:$(DOCKER_TAG);
+          docker run -t -d --name app --mount "type=bind,src=$(pwd)/${{ parameters.REPO_NAME }},target=${{ variables.DOCKER_MOUNT_DIR }}" scritical/$DOCKER_IMAGE:$(DOCKER_TAG) /bin/bash;
+          docker exec app /bin/bash -c "rm -rf ${{ variables.DOCKER_WORKING_DIR }} && cp -r ${{ variables.DOCKER_MOUNT_DIR }} ${{ variables.DOCKER_WORKING_DIR }}";
+        displayName: Prepare Repository
+      - script: |
+          set -e
+          docker exec app /bin/bash -c ". ${{ variables.BASHRC }} && cd ${{ variables.DOCKER_WORKING_DIR }} && mypy"
+        displayName: Run mypy
+        condition: and(succeeded())
 
 
