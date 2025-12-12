@@ -203,6 +203,6 @@ jobs:
           set -e
           docker exec app /bin/bash -c ". ${{ variables.BASHRC }} && cd ${{ variables.DOCKER_WORKING_DIR }} && mypy"
         displayName: Run mypy
-        condition: and(succeeded())
+        condition: succeeded()
 
 
