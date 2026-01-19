@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      MCCABE:
+        type: boolean
+        default: false
+        description: "Enable McCabe complexity check (pass/fail)"
 
 jobs:
   format-and-lint:
@@ -9,23 +14,32 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: "3.11"
       - name: Install dependencies
         run: |
-          wget https://raw.githubusercontent.com/mdolab/.github/main/.pre-commit-config.yaml
+          wget https://raw.githubusercontent.com/scritical/.github/main/.pre-commit-config.yaml
           pip install pre-commit
 
-          # Set the ruff config in the .github repo as the global config, then the local config should extend it by including the line `extend = "~/.config/ruff/ruff.toml"`
+          # Set the ruff config in the .github repo as the global config
+          # Repos can extend it by including `extend = "~/.config/ruff/ruff.toml"` in their local ruff.toml
           mkdir -p ~/.config/ruff
-          url=https://raw.githubusercontent.com/mdolab/.github/main/ruff.toml
-          wget $url -O ~/.config/ruff/ruff.toml
+          wget https://raw.githubusercontent.com/scritical/.github/main/ruff.toml -O ~/.config/ruff/ruff.toml
 
-          echo "Ruff config:"
+          echo "=== Global ruff config ==="
           cat ~/.config/ruff/ruff.toml
           if [[ -f "ruff.toml" ]]; then
+              echo "=== Local ruff config ==="
               cat ruff.toml
           fi
 
       - name: Run pre-commit checks
         run: |
           pre-commit run --all-files --show-diff-on-failure
+
+      - name: McCabe complexity check
+        if: inputs.MCCABE
+        run: |
+          echo "=== McCabe Complexity Report ==="
+          echo "Checking for functions with complexity > 10..."
+          pip install ruff
+          ruff check --select=C90 --output-format=text .

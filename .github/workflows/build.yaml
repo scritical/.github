@@ -1,0 +1,76 @@
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 120
+        description: "Timeout for the job in minutes"
+      GCC_CONFIG:
+        type: string
+        default: ""
+        description: "Path to GCC configuration file"
+      BUILD_SCRIPT:
+        type: string
+        default: ".github/build_real.sh"
+        description: "Path to build script"
+      TEST_SCRIPT:
+        type: string
+        default: ".github/test_real.sh"
+        description: "Path to test script"
+    secrets:
+      DOCKER_OAT:
+        required: true
+        description: "Docker registry Organization Access Token"
+
+env:
+  SCRITICAL_HOMEDIR: /home/scriticaluser
+  DOCKER_TAG: u24-gcc-ompi-latest
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Get repository name
+        id: repo
+        run: echo "name=${GITHUB_REPOSITORY##*/}" >> $GITHUB_OUTPUT
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_OAT }}" | docker login -u scritical --password-stdin
+
+      - name: Pull Docker image
+        run: docker pull scritical/private-dev:${{ env.DOCKER_TAG }}
+
+      - name: Start Docker container
+        run: |
+          REPO_NAME="${{ steps.repo.outputs.name }}"
+          docker run -t -d --name app \
+            --mount "type=bind,src=${{ github.workspace }},target=${{ env.SCRITICAL_HOMEDIR }}/mount/${REPO_NAME}" \
+            scritical/private-dev:${{ env.DOCKER_TAG }} /bin/bash
+
+          # Copy repo to working directory
+          docker exec app /bin/bash -c "cp -r ${{ env.SCRITICAL_HOMEDIR }}/mount/${REPO_NAME} ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME}"
+
+      - name: Build
+        if: inputs.BUILD_SCRIPT != ''
+        run: |
+          REPO_NAME="${{ steps.repo.outputs.name }}"
+          docker exec \
+            -e CONFIG_FILE="${{ inputs.GCC_CONFIG }}" \
+            app /bin/bash -c ". ${{ env.SCRITICAL_HOMEDIR }}/.bashrc_scritical && cd ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+
+      - name: Test
+        if: inputs.TEST_SCRIPT != ''
+        run: |
+          REPO_NAME="${{ steps.repo.outputs.name }}"
+          docker exec \
+            -e AGENT_NAME="${{ runner.name }}" \
+            -e BUILD_REASON="${{ github.event_name }}" \
+            app /bin/bash -c ". ${{ env.SCRITICAL_HOMEDIR }}/.bashrc_scritical && cd ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
+
+      - name: Cleanup
+        if: always()
+        run: docker stop app && docker rm app || true

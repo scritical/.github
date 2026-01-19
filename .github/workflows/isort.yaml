@@ -9,11 +9,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.9
-      - name: Get isort config file
+          python-version: "3.11"
+      - name: Prepare isort config
         run: |
-          # copy over the isort config file
-          if [[ ! -f ".isort.cfg" ]]; then
-            wget https://raw.githubusercontent.com/mdolab/.github/main/.isort.cfg
+          # Download global config
+          wget https://raw.githubusercontent.com/scritical/.github/main/.isort.cfg -O .isort.cfg-global
+
+          # Check for local overrides and merge if present
+          if [[ -f ".isort.cfg" ]]; then
+            echo "Found local .isort.cfg, merging with global config..."
+            wget https://raw.githubusercontent.com/scritical/.github/main/combine-config.py
+            python combine-config.py .isort.cfg-global .isort.cfg .isort.cfg-merged
+            mv .isort.cfg-merged .isort.cfg
+            rm combine-config.py
+          else
+            mv .isort.cfg-global .isort.cfg
           fi
+          rm -f .isort.cfg-global
+
       - uses: isort/isort-action@master

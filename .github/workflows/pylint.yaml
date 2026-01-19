@@ -9,13 +9,27 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.9
+          python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install wheel
-          pip install pylint
+          pip install wheel pylint
+      - name: Prepare pylint config
+        run: |
+          # Download global config
+          wget https://raw.githubusercontent.com/scritical/.github/main/.pylintrc -O .pylintrc-global
+
+          # Check for local overrides and merge if present
+          if [[ -f ".pylintrc" ]]; then
+            echo "Found local .pylintrc, merging with global config..."
+            wget https://raw.githubusercontent.com/scritical/.github/main/combine-config.py
+            python combine-config.py .pylintrc-global .pylintrc .pylintrc-merged
+            mv .pylintrc-merged .pylintrc
+            rm combine-config.py
+          else
+            mv .pylintrc-global .pylintrc
+          fi
+          rm -f .pylintrc-global
+
       - name: Run pylint
         run: |
-          # copy over the pylint config file
-          wget https://raw.githubusercontent.com/mdolab/.github/main/.pylintrc
           find . -type f -name "*.py" -not -path "*/doc/*" | xargs pylint
