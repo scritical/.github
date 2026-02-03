@@ -1,0 +1,44 @@
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 10
+        description: "Timeout for the job in minutes"
+
+jobs:
+  fortitude:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install fortitude
+        run: pip install fortitude-lint==0.7.5
+
+      - name: Get fortitude config
+        run: |
+          LOCAL_CONFIG_FILE="fortitude.toml"
+          GLOBAL_CONFIG_URL="https://raw.githubusercontent.com/scritical/.github/main/fortitude.toml"
+
+          if [[ ! -f "$LOCAL_CONFIG_FILE" ]]; then
+            echo "Downloading global fortitude config..."
+            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global config found, using defaults"
+          fi
+
+      - name: Run fortitude
+        run: |
+          CONFIG_FILE="fortitude.yaml"
+          CONFIG_ARG=""
+          if [[ -f "$CONFIG_FILE" ]]; then
+            CONFIG_ARG="--config-file $CONFIG_FILE"
+          fi
+
+          # Run fortitude
+          fortitude $CONFIG_ARG check
