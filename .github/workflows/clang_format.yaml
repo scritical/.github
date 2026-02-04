@@ -24,7 +24,7 @@ jobs:
 
           if [[ ! -f "$LOCAL_CONFIG_FILE" ]]; then
             echo "Downloading global clang-format config..."
-            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global config found"
+            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global clang-format config found; proceeding without a config file. The subsequent clang-format step may fail because -style=file requires a .clang-format configuration."
           fi
 
       - name: Run clang-format
