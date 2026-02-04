@@ -29,7 +29,7 @@ jobs:
 
           if [[ ! -f "$LOCAL_CONFIG_FILE" ]]; then
             echo "Downloading global fprettify config..."
-            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global config found, using defaults"
+            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global config found; fprettify will use its built-in defaults"
           fi
 
       - name: Run fprettify
