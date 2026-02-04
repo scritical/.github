@@ -1,10 +1,10 @@
 on:
   workflow_call:
     inputs:
-    MCCABE:
-      type: boolean
-      default: false
-      description: "Enable McCabe complexity check (pass/fail)"
+      MCCABE:
+        type: boolean
+        default: false
+        description: "Enable McCabe complexity check (pass/fail)"
 
 
 jobs:
