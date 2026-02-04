@@ -1,0 +1,49 @@
+on:
+  workflow_call:
+    inputs:
+    MCCABE:
+      type: boolean
+      default: false
+      description: "Enable McCabe complexity check (pass/fail)"
+
+
+jobs:
+  ruff:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v5
+      
+      - name: Checkout org-wide configs
+        uses: actions/checkout@v5
+        with:
+          repository: scritical/.github
+          path: .org-dotgithub
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      
+      - name: Install Ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      
+      - name: Ruff formatting
+        run: |
+          echo "=== Ruff Formatting Check ==="
+          ruff format --check --exit-non-zero-on-fix --config .org-dotgithub/ruff.toml --output-format=github .
+        
+      - name: Ruff linting
+        run: |
+          echo "=== Ruff Linting Check ==="
+          ruff check --exit-zero-on-fix --config .org-dotgithub/ruff.toml --output-format=github .
+
+      - name: McCabe complexity check
+        if: inputs.MCCABE
+        run: |
+          echo "=== McCabe Complexity Report ==="
+          echo "Checking for functions with complexity > 10..."
+          ruff check --select=C90 --output-format=github .
