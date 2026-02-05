@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
-"""
-Merge two INI-style configuration files.
+"""Merge two INI-style configuration files.
 
-This script reads a default config and a repo-specific config,
-merges them (with repo-specific values taking precedence),
-and writes the result to an output file.
+This script merges a *default* INI config with an optional *repo-specific* INI
+config, writing the merged result to an output path. If the repo-specific
+config file does not exist, the default config is written as-is.
 
-Usage:
-    python combine-config.py default.cfg repo.cfg output.cfg
+Notes
+-----
+The merge behavior is:
 
-If the repo config file doesn't exist, the default config is used as-is.
+- Sections present only in the default config are preserved.
+- Sections present in the repo config are added if missing.
+- For keys present in both configs, the repo config value overrides the
+    default.
+
+Examples
+--------
+From the command line::
+
+        python combine-config.py default.cfg repo.cfg merged.cfg
+
 """
 import argparse
 import configparser
@@ -18,7 +28,23 @@ from pathlib import Path
 
 
 def merge_configs(default_path: str, repo_path: str, output_path: str) -> None:
-    """Merge default and repo configs, writing result to output."""
+    """Merge a default config with an optional repo config.
+
+    Parameters
+    ----------
+    default_path : str
+        Path to the default INI-style configuration file.
+    repo_path : str
+        Path to the repo-specific INI-style configuration file. If this file
+        does not exist, the default config is used without modification.
+    output_path : str
+        Path to write the merged INI configuration.
+
+    Returns
+    -------
+    None
+        This function writes the merged configuration to ``output_path``.
+    """
     # Read default config
     config = configparser.ConfigParser()
     config.read(default_path)
@@ -42,7 +68,15 @@ def merge_configs(default_path: str, repo_path: str, output_path: str) -> None:
 
 
 def main() -> int:
-    """Parse arguments and run merge."""
+    """CLI entry point.
+
+    Parses command-line arguments and writes a merged configuration file.
+
+    Returns
+    -------
+    int
+        Process exit code. Returns ``0`` on successful completion.
+    """
     parser = argparse.ArgumentParser(
         description="Merge two INI-style configuration files"
     )
