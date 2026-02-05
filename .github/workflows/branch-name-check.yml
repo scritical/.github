@@ -1,15 +1,14 @@
 name: Branch Name Check
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, edited]
+  workflow_call:
     branches:
       - main
       - 'client-*'
 
 jobs:
   check-branch-name:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check branch name for main
         if: github.base_ref == 'main'
