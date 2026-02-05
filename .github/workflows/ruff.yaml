@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: scritical/.github
-          path: ~/.org-dotgithub
+          path: .org-dotgithub
           fetch-depth: 1
 
       - name: Set up Python
@@ -36,12 +36,16 @@ jobs:
           echo "=== Ruff Formatting Check ==="
           CURRENT_REPO_DIR=$(pwd)
           echo "Current repo directory: $CURRENT_REPO_DIR"
-          ruff format --check --exit-non-zero-on-fix --config ~/.org-dotgithub/ruff.toml
+          ls -la
+          echo ""
+          echo "One level up: ${CURRENT_REPO_DIR}/.."
+          ls -la ..
+          ruff format --check --exit-non-zero-on-fix --config .org-dotgithub/ruff.toml
         
       - name: Ruff linting
         run: |
           echo "=== Ruff Linting Check ==="
-          ruff check --exit-zero-on-fix --config ~/.org-dotgithub/ruff.toml
+          ruff check --exit-zero-on-fix --config .org-dotgithub/ruff.toml
 
       - name: McCabe complexity check
         if: inputs.MCCABE
