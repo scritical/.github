@@ -11,14 +11,14 @@ jobs:
   ruff:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout project
+      - name: Checkout repository
         uses: actions/checkout@v5
       
       - name: Checkout org-wide configs
         uses: actions/checkout@v5
         with:
           repository: scritical/.github
-          path: .org-dotgithub
+          path: ~/.org-dotgithub
           fetch-depth: 1
 
       - name: Set up Python
@@ -36,12 +36,12 @@ jobs:
           echo "=== Ruff Formatting Check ==="
           CURRENT_REPO_DIR=$(pwd)
           echo "Current repo directory: $CURRENT_REPO_DIR"
-          ruff format --check --exit-non-zero-on-fix --config .org-dotgithub/ruff.toml
+          ruff format --check --exit-non-zero-on-fix --config ~/.org-dotgithub/ruff.toml
         
       - name: Ruff linting
         run: |
           echo "=== Ruff Linting Check ==="
-          ruff check --exit-zero-on-fix --config .org-dotgithub/ruff.toml
+          ruff check --exit-zero-on-fix --config ~/.org-dotgithub/ruff.toml
 
       - name: McCabe complexity check
         if: inputs.MCCABE
