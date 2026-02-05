@@ -34,16 +34,16 @@ jobs:
       - name: Ruff formatting
         run: |
           echo "=== Ruff Formatting Check ==="
-          ruff format --check --exit-non-zero-on-fix --config .org-dotgithub/ruff.toml --output-format=github .
+          ruff format --check --exit-non-zero-on-fix --config .org-dotgithub/ruff.toml
         
       - name: Ruff linting
         run: |
           echo "=== Ruff Linting Check ==="
-          ruff check --exit-zero-on-fix --config .org-dotgithub/ruff.toml --output-format=github .
+          ruff check --exit-zero-on-fix --config .org-dotgithub/ruff.toml
 
       - name: McCabe complexity check
         if: inputs.MCCABE
         run: |
           echo "=== McCabe Complexity Report ==="
           echo "Checking for functions with complexity > 10..."
-          ruff check --select=C90 --output-format=github .
+          ruff check --select=C90
