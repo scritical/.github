@@ -10,9 +10,14 @@ on:
 jobs:
   ruff:
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: project
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          path: project
       
       - name: Checkout org-wide configs
         uses: actions/checkout@v5
@@ -34,22 +39,16 @@ jobs:
       - name: Ruff formatting
         run: |
           echo "=== Ruff Formatting Check ==="
-          CURRENT_REPO_DIR=$(pwd)
-          echo "Current repo directory: $CURRENT_REPO_DIR"
-          ls -la
-          echo ""
-          echo "One level up: ${CURRENT_REPO_DIR}/.."
-          ls -la ..
-          ruff format --check --exit-non-zero-on-fix --config .org-dotgithub/ruff.toml
+          ruff format --check --exit-non-zero-on-fix --config ../.org-dotgithub/ruff.toml .
         
       - name: Ruff linting
         run: |
           echo "=== Ruff Linting Check ==="
-          ruff check --exit-zero-on-fix --config .org-dotgithub/ruff.toml
+          ruff check --exit-zero-on-fix --config ../.org-dotgithub/ruff.toml .
 
       - name: McCabe complexity check
         if: inputs.MCCABE
         run: |
           echo "=== McCabe Complexity Report ==="
           echo "Checking for functions with complexity > 10..."
-          ruff check --select=C90
+          ruff check --select=C90 .
