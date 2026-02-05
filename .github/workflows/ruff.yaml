@@ -44,7 +44,7 @@ jobs:
       - name: Ruff linting
         run: |
           echo "=== Ruff Linting Check ==="
-          ruff check --exit-zero-on-fix --config ../.org-dotgithub/ruff.toml .
+          ruff check --exit-non-zero-on-fix --config ../.org-dotgithub/ruff.toml .
 
       - name: McCabe complexity check
         if: inputs.MCCABE
