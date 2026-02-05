@@ -1,10 +1,5 @@
-name: Branch Name Check
-
 on:
   workflow_call:
-    branches:
-      - main
-      - 'client-*'
 
 jobs:
   check-branch-name:
