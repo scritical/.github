@@ -5,6 +5,10 @@ on:
         type: number
         default: 10
         description: "Timeout for the job in minutes"
+      FAIL:
+        type: boolean
+        default: true
+        description: "Fail the workflow on fortitude issues"
 
 jobs:
   fortitude:
@@ -34,11 +38,15 @@ jobs:
 
       - name: Run fortitude
         run: |
-          CONFIG_FILE="fortitude.yaml"
+          CONFIG_FILE="fortitude.toml"
           CONFIG_ARG=""
           if [[ -f "$CONFIG_FILE" ]]; then
             CONFIG_ARG="--config-file $CONFIG_FILE"
           fi
 
-          # Run fortitude
-          fortitude $CONFIG_ARG check
+          # Run fortitude with appropriate fail behavior
+          if [[ ${{ inputs.FAIL }} == true ]]; then
+            fortitude $CONFIG_ARG check
+          else
+            fortitude $CONFIG_ARG check --exit-zero
+          fi
