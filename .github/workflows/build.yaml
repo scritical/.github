@@ -52,7 +52,7 @@ jobs:
             scritical/private-dev:${{ env.DOCKER_TAG }} /bin/bash
 
           # Copy repo to working directory
-          docker exec app /bin/bash -c "cp -r ${{ env.SCRITICAL_HOMEDIR }}/mount/${REPO_NAME} ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME}"
+          docker exec app /bin/bash -c "rm -rf ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && mkdir -p ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && cp -a ${{ env.SCRITICAL_HOMEDIR }}/mount/${REPO_NAME}/. ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME}/"
 
       - name: Build
         if: inputs.BUILD_SCRIPT != ''
