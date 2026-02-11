@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: ${{ inputs.TIMEOUT }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -26,7 +26,7 @@ jobs:
 
       - name: Install and run Tapenade
         run: |
-          # Download Tapenade 3.16
+          # Download Tapenade 3.16 (tapenade_3.16-v2-723-ge8da61555.tar)
           TAPENADE_URL="https://gitlab.inria.fr/tapenade/tapenade/-/package_files/112870/download"
           wget "$TAPENADE_URL" -O tapenade_3.16.tar
           tar -xzf tapenade_3.16.tar
