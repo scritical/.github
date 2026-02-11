@@ -7,15 +7,11 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | Workflow | Description |
 | :------- | :---------- |
 | `build.yaml` | Build and test code in Docker container |
-| `format-and-lint.yaml` | Python formatting and linting with ruff/pre-commit |
-| `pypi.yaml` | Publish Python packages to PyPI |
 | `tapenade.yaml` | Tapenade automatic differentiation checks |
 | `clang_format.yaml` | C/C++ formatting checks |
 | `fprettify.yaml` | Fortran 90 formatting checks |
-| `isort.yaml` | Python import sorting checks |
-| `pylint.yaml` | Python linting with pylint |
-| `mypy.yaml` | Python type checking |
-| `branch-name-check.yml` | Enforce branch naming conventions |
+| `ruff.yaml` | Python formatting and linting with Ruff |
+| `branch-name-check.yaml` | Enforce branch naming conventions |
 
 ---
 
@@ -29,19 +25,24 @@ Docker-based build and test workflow using the `scritical/private-dev` image.
 | :--- | :--- | :------ | :---------- |
 | `TIMEOUT` | number | `120` | Runtime allowed for the job, in minutes |
 | `GCC_CONFIG` | string | `""` | Path to GCC configuration file (from repository root) |
+| `INTEL_CONFIG` | string | `""` | Path to Intel configuration file (from repository root) |
 | `BUILD_SCRIPT` | string | `.github/build_real.sh` | Path to build script. Empty string skips this step |
 | `TEST_SCRIPT` | string | `.github/test_real.sh` | Path to test script. Empty string skips this step |
+| `BUILD` | boolean | `true` | Whether to run the build step |
+| `TEST` | boolean | `true` | Whether to run the test step |
+| `MYPY` | boolean | `false` | Whether to run mypy type checking |
 
 **Required Secrets:**
 | Name | Description |
 | :--- | :---------- |
+| `DOCKER_USER` | Docker registry username |
 | `DOCKER_OAT` | Docker registry Organization Access Token |
 
 ---
 
-### format-and-lint.yaml
+### ruff.yaml
 
-Python formatting and linting using pre-commit with ruff.
+Python formatting and linting using Ruff.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
@@ -58,17 +59,6 @@ ignore = ["N802"]
 
 ---
 
-### pypi.yaml
-
-Publish Python packages to PyPI on tagged releases.
-
-**Required Secrets:**
-| Name | Description |
-| :--- | :---------- |
-| `PYPI_API_TOKEN` | PyPI API token for publishing |
-
----
-
 ### tapenade.yaml
 
 Run Tapenade automatic differentiation and check for uncommitted changes.
@@ -78,7 +68,9 @@ Run Tapenade automatic differentiation and check for uncommitted changes.
 | `TIMEOUT` | number | `10` | Runtime allowed for the job, in minutes |
 | `TAPENADE_SCRIPT` | string | `.github/build_tapenade.sh` | Path to Tapenade build script |
 
-Uses Tapenade version 3.16.
+Uses Tapenade version 3.16 from tapenade_3.16-v2-723-ge8da61555.tar. Using a different version will create a diff.
+
+Here is the link to our tapenade version: https://gitlab.inria.fr/tapenade/tapenade/-/package_files/112870/download
 
 ---
 
@@ -106,30 +98,6 @@ Fortran 90 code formatting checks using fprettify.
 
 ---
 
-### isort.yaml
-
-Python import sorting checks.
-
-**Configuration Override:** Create a `.isort.cfg` file in your repo root with overrides. The global and local configs are merged automatically using `combine-config.py`.
-
----
-
-### pylint.yaml
-
-Python linting with pylint.
-
-**Configuration Override:** Create a `.pylintrc` file in your repo root with overrides. The global and local configs are merged automatically using `combine-config.py`.
-
----
-
-### mypy.yaml
-
-Python type checking with mypy.
-
-No configurable inputs. Uses Python 3.11.
-
----
-
 ## Setting Up Workflows
 
 ### Step 1: Create Workflow File
@@ -153,10 +121,11 @@ jobs:
       BUILD_SCRIPT: .github/build_real.sh
       TEST_SCRIPT: .github/test_real.sh
     secrets:
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
 
-  format-and-lint:
-    uses: scritical/.github/.github/workflows/format-and-lint.yaml@main
+  ruff:
+    uses: scritical/.github/.github/workflows/ruff.yaml@main
 
   clang-format:
     uses: scritical/.github/.github/workflows/clang_format.yaml@main
@@ -191,42 +160,8 @@ testflo -v . -n 1
 ### Step 4: Add Secrets
 
 In your repository settings, add the required secrets:
+- `DOCKER_USER` - Docker organization name
 - `DOCKER_OAT` - Docker Organization Access Token for pulling private images
-
----
-
-## PyPI Publishing
-
-For repositories that publish to PyPI, extend your workflow:
-
-```yaml
-name: CI
-
-on:
-  push:
-    branches: [main]
-    tags:
-      - 'v*.*.*'
-  pull_request:
-    branches: [main]
-
-jobs:
-  format-and-lint:
-    uses: scritical/.github/.github/workflows/format-and-lint.yaml@main
-
-  build:
-    uses: scritical/.github/.github/workflows/build.yaml@main
-    with:
-      GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
-    secrets:
-      DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
-
-  pypi:
-    needs: [format-and-lint, build]
-    uses: scritical/.github/.github/workflows/pypi.yaml@main
-    secrets:
-      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-```
 
 ---
 
@@ -243,6 +178,7 @@ jobs:
       BUILD_SCRIPT: .github/build_real.sh
       TEST_SCRIPT: .github/test_real.sh
     secrets:
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
 
   build-complex:
@@ -252,6 +188,7 @@ jobs:
       BUILD_SCRIPT: .github/build_complex.sh
       TEST_SCRIPT: .github/test_complex.sh
     secrets:
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
 ```
 
@@ -264,8 +201,6 @@ Several workflows support configuration inheritance/overrides:
 | Tool | Method | Local Config File |
 | :--- | :----- | :---------------- |
 | Ruff | Native `extend` keyword | `ruff.toml` |
-| Pylint | Merged via `combine-config.py` | `.pylintrc` |
-| isort | Merged via `combine-config.py` | `.isort.cfg` |
 | clang-format | Local file takes precedence | `.clang-format` |
 | fprettify | Local file takes precedence | `.fprettify.rc` |
 
@@ -277,17 +212,6 @@ extend = "~/.config/ruff/ruff.toml"
 
 [lint]
 ignore = ["N802", "N803"]  # Allow uppercase function/argument names
-```
-
-### Example: Pylint Override
-
-```ini
-# .pylintrc (partial - only overrides)
-[MESSAGES CONTROL]
-disable = C0114,C0115
-
-[FORMAT]
-max-line-length = 150
 ```
 
 ---
