@@ -125,6 +125,5 @@ jobs:
     env:
       DOCKER_TAG: u24-intel-ompi-latest
       CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
-    steps:
-      - *build_steps
+    steps: *build_steps
           
