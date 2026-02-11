@@ -12,10 +12,10 @@ jobs:
     timeout-minutes: ${{ inputs.TIMEOUT }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install clang-format
-        run: sudo apt-get install clang-format-10 -y
+        run: sudo apt-get install clang-format-20 -y
 
       - name: Get clang-format config
         run: |
