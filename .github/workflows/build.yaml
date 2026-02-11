@@ -61,9 +61,8 @@ jobs:
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
-    steps:
-      - &build_steps
-        name: Checkout repository
+    steps: &build_steps
+      - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Set repo environment variables
@@ -127,5 +126,5 @@ jobs:
       DOCKER_TAG: u24-intel-ompi-latest
       CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
     steps:
-      *build_steps
+      - *build_steps
           
