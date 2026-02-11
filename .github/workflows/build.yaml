@@ -59,8 +59,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     steps:
+      - name: Checkout org workflows
+        uses: actions/checkout@v6
+        with:
+          repository: scritical/.github
+          ref: feature-migrate_azure2gha
+          path: .org-dotgithub
+
       - name: Build and test (GCC)
-        uses: ./.github/actions/build-and-test
+        uses: ./.org-dotgithub/.github/actions/build-and-test
         with:
           docker_tag: u24-gcc-ompi-latest
           config_file: ${{ inputs.GCC_CONFIG }}
@@ -77,8 +84,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     steps:
+      - name: Checkout org workflows
+        uses: actions/checkout@v6
+        with:
+          repository: scritical/.github
+          ref: feature-migrate_azure2gha
+          path: .org-dotgithub
+
       - name: Build and test (Intel)
-        uses: ./.github/actions/build-and-test
+        uses: ./.org-dotgithub/.github/actions/build-and-test
         with:
           docker_tag: u24-intel-ompi-latest
           config_file: ${{ inputs.INTEL_CONFIG }}
