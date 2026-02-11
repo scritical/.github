@@ -13,6 +13,14 @@ on:
         type: string
         default: ""
         description: "Path to Intel configuration file"
+      INTEL:
+        type: boolean
+        default: false
+        description: "Whether to run Intel-specific build and test steps (if false, runs GCC steps)"
+      GCC:
+        type: boolean
+        default: true
+        description: "Whether to run GCC-specific build and test steps (if false, runs Intel steps)"
       BUILD_SCRIPT:
         type: string
         default: ".github/build_real.sh"
@@ -47,15 +55,19 @@ env:
 
 jobs:
   build-and-test:
-    if: matrix.CONFIG_FILE != ''
+    if: |
+      (matrix.TOOLCHAIN == 'gcc' && inputs.GCC) ||
+      (matrix.TOOLCHAIN == 'intel' && inputs.INTEL)
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     strategy:
       matrix:
         include:
-          - DOCKER_TAG: u24-gcc-ompi-latest
+          - TOOLCHAIN: gcc
+            DOCKER_TAG: u24-gcc-ompi-latest
             CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
-          - DOCKER_TAG: u24-intel-ompi-latest
+          - TOOLCHAIN: intel
+            DOCKER_TAG: u24-intel-ompi-latest
             CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
     steps:
       - name: Checkout repository
