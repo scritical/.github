@@ -27,7 +27,7 @@ ignore = [
     "D404", # First word of the docstring should not be "This" (Probably a good rule to follow going forward but it occurs in so many places in our code and it's not a big enough issue to warrant fixing)
 ]
 
-select = ["B", "D", "E", "F", "W"]
+select = ["B", "D", "E", "F", "W", "I"]
 
 [lint.pydocstyle]
 convention = "numpy"
