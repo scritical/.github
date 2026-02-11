@@ -47,6 +47,7 @@ env:
 
 jobs:
   build-and-test:
+    if: matrix.CONFIG_FILE != ''
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     strategy:

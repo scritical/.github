@@ -20,6 +20,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 ### build.yaml
 
 Docker-based build and test workflow using the `scritical/private-dev` image.
+Runs separate GCC and Intel jobs when the matching config input is provided.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
@@ -43,10 +44,12 @@ Docker-based build and test workflow using the `scritical/private-dev` image.
 ### ruff.yaml
 
 Python formatting and linting using Ruff.
+The workflow checks out the org-wide Ruff configuration from `scritical/.github` and uses `ruff.toml` from that repo as the base config.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
 | `MCCABE` | boolean | `false` | Enable McCabe complexity check (pass/fail, max complexity = 10) |
+| `ISORT` | boolean | `false` | Enable import sorting check (pass/fail) |
 
 **Configuration Override:** Create a `ruff.toml` in your repo with:
 ```toml
@@ -97,6 +100,13 @@ Fortran 90 code formatting checks using fprettify.
 **Configuration Override:** Create a `.fprettify.rc` file in your repo root.
 
 ---
+
+### branch-name-check.yaml
+
+Enforces branch naming conventions for pull requests:
+
+- For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
+- For PRs targeting `client-*`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
 
 ## Setting Up Workflows
 
