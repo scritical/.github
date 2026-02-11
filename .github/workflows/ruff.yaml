@@ -5,7 +5,10 @@ on:
         type: boolean
         default: false
         description: "Enable McCabe complexity check (pass/fail)"
-
+      ISORT:
+        type: boolean
+        default: false
+        description: "Enable isort import sorting check (pass/fail)"
 
 jobs:
   ruff:
@@ -47,6 +50,12 @@ jobs:
         run: |
           echo "=== Ruff Linting Check ==="
           ruff check --exit-non-zero-on-fix --config $RUFF_CONFIG .
+      
+      - name: isort check
+        if: inputs.ISORT
+        run: |
+          echo "=== isort Import Sorting Check ==="
+          ruff check --exit-non-zero-on-fix --select=I --config $RUFF_CONFIG .
 
       - name: McCabe complexity check
         if: inputs.MCCABE
