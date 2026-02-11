@@ -1,0 +1,100 @@
+name: Build and test
+
+description: Run dockerized build/test/mypy steps for a specific toolchain.
+
+inputs:
+  docker_tag:
+    description: Docker image tag to use.
+    required: true
+  config_file:
+    description: Path to compiler config file (from repository root).
+    required: true
+  build_script:
+    description: Path to build script.
+    required: true
+  test_script:
+    description: Path to test script.
+    required: true
+  build:
+    description: Whether to run the build step.
+    required: false
+    default: "true"
+  test:
+    description: Whether to run the test step.
+    required: false
+    default: "true"
+  mypy:
+    description: Whether to run mypy type checking.
+    required: false
+    default: "false"
+  docker_user:
+    description: Docker registry username.
+    required: true
+  docker_oat:
+    description: Docker registry Organization Access Token.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Set repo environment variables
+      shell: bash
+      run: |
+        repo_name="${{ github.event.repository.name }}"
+        echo "REPO_NAME=$repo_name" >> "$GITHUB_ENV"
+        echo "DOCKER_WORKING_DIR=${{ env.SCRITICAL_HOMEDIR }}/repos/$repo_name" >> "$GITHUB_ENV"
+        echo "DOCKER_MOUNT_DIR=${{ env.SCRITICAL_HOMEDIR }}/mount/$repo_name" >> "$GITHUB_ENV"
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.docker_user }}
+        password: ${{ inputs.docker_oat }}
+
+    - name: Start Docker container
+      shell: bash
+      run: |
+        docker run -t -d --name app \
+          --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
+          scritical/private-dev:${{ inputs.docker_tag }} /bin/bash
+
+        # Copy repo to working directory
+        docker exec app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && mkdir -p $DOCKER_WORKING_DIR && cp -a $DOCKER_MOUNT_DIR/. $DOCKER_WORKING_DIR/"
+
+    - name: Build
+      if: ${{ inputs.build_script != '' && inputs.build == 'true' }}
+      shell: bash
+      run: |
+        docker exec \
+          -e CONFIG_FILE="${{ inputs.config_file }}" \
+          app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.build_script }}"
+
+    - name: Test
+      if: ${{ inputs.test_script != '' && inputs.test == 'true' }}
+      shell: bash
+      run: |
+        docker exec \
+          -e AGENT_NAME="${{ runner.name }}" \
+          -e BUILD_REASON="${{ github.event_name }}" \
+          app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.test_script }}"
+
+    - name: MyPy type checking
+      if: ${{ inputs.mypy == 'true' }}
+      shell: bash
+      run: |
+        docker exec \
+          -e AGENT_NAME="${{ runner.name }}" \
+          -e BUILD_REASON="${{ github.event_name }}" \
+          app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy ."
+
+    - name: Cleanup
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        # Stop and remove the container only if it exists to avoid noisy errors.
+        if docker ps -a --format '{{.Names}}' | grep -qx app; then
+          docker stop app && docker rm app || true
+        fi
