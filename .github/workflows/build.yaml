@@ -21,62 +21,94 @@ on:
         type: string
         default: ".github/test_real.sh"
         description: "Path to test script"
+      BUILD:
+        type: boolean
+        default: true
+        description: "Whether to run the build step"
+      TEST:
+        type: boolean
+        default: true
+        description: "Whether to run the test step"
+      MYPY:
+        type: boolean
+        default: false
+        description: "Whether to run mypy type checking"
     secrets:
+      DOCKER_USER:
+        required: true
+        description: "Docker registry username"
       DOCKER_OAT:
         required: true
         description: "Docker registry Organization Access Token"
 
 env:
   SCRITICAL_HOMEDIR: /home/scriticaluser
-  DOCKER_TAG: u24-gcc-ompi-latest
+  BASHRC: ${{ env.SCRITICAL_HOMEDIR }}/.bashrc_scritical
 
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    strategy:
+      matrix:
+        include:
+          - DOCKER_TAG: u24-gcc-ompi-latest
+            CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
+          - DOCKER_TAG: u24-intel-ompi-latest
+            CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Get repository name
-        id: repo
-        run: echo "name=${GITHUB_REPOSITORY##*/}" >> $GITHUB_OUTPUT
-
+      - name: Set repo environment variables
+        run: |
+          repo_name="${{ github.event.repository.name }}"
+          echo "REPO_NAME=$repo_name" >> "$GITHUB_ENV"
+          echo "DOCKER_WORKING_DIR=${{ env.SCRITICAL_HOMEDIR }}/repos/$repo_name" >> "$GITHUB_ENV"
+          echo "DOCKER_MOUNT_DIR=${{ env.SCRITICAL_HOMEDIR }}/mount/$repo_name" >> "$GITHUB_ENV"
+        
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_OAT }}
-      - name: Pull Docker image
-        run: docker pull scritical/private-dev:${{ env.DOCKER_TAG }}
 
       - name: Start Docker container
         run: |
-          REPO_NAME="${{ steps.repo.outputs.name }}"
           docker run -t -d --name app \
-            --mount "type=bind,src=${{ github.workspace }},target=${{ env.SCRITICAL_HOMEDIR }}/mount/${REPO_NAME}" \
-            scritical/private-dev:${{ env.DOCKER_TAG }} /bin/bash
+            --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
+            scritical/private-dev:${{ matrix.DOCKER_TAG }} /bin/bash
 
           # Copy repo to working directory
-          docker exec app /bin/bash -c "rm -rf ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && mkdir -p ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && cp -a ${{ env.SCRITICAL_HOMEDIR }}/mount/${REPO_NAME}/. ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME}/"
+          docker exec app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && mkdir -p $DOCKER_WORKING_DIR && cp -a $DOCKER_MOUNT_DIR/. $DOCKER_WORKING_DIR/"
 
       - name: Build
-        if: inputs.BUILD_SCRIPT != ''
+        if: inputs.BUILD_SCRIPT != '' && inputs.BUILD
         run: |
-          REPO_NAME="${{ steps.repo.outputs.name }}"
           docker exec \
-            -e CONFIG_FILE="${{ inputs.GCC_CONFIG }}" \
-            app /bin/bash -c ". ${{ env.SCRITICAL_HOMEDIR }}/.bashrc_scritical && cd ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+            -e CONFIG_FILE="${{ matrix.CONFIG_FILE }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
 
       - name: Test
-        if: inputs.TEST_SCRIPT != ''
+        if: inputs.TEST_SCRIPT != '' && inputs.TEST
         run: |
-          REPO_NAME="${{ steps.repo.outputs.name }}"
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
             -e BUILD_REASON="${{ github.event_name }}" \
-            app /bin/bash -c ". ${{ env.SCRITICAL_HOMEDIR }}/.bashrc_scritical && cd ${{ env.SCRITICAL_HOMEDIR }}/repos/${REPO_NAME} && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
+      
+      - name: MyPy type checking
+        if: inputs.MYPY
+        run: |
+          docker exec \
+            -e AGENT_NAME="${{ runner.name }}" \
+            -e BUILD_REASON="${{ github.event_name }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy"
 
       - name: Cleanup
         if: always()
-        run: docker stop app && docker rm app || true
+        run: |
+          # Stop and remove the container only if it exists to avoid noisy errors.
+          if docker ps -a --format '{{.Names}}' | grep -qx app; then
+            docker stop app && docker rm app || true
+          fi

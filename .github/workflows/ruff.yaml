@@ -13,14 +13,16 @@ jobs:
     defaults:
       run:
         working-directory: project
+    env:
+      RUFF_CONFIG: ../.org-dotgithub/ruff.toml
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: project
       
       - name: Checkout org-wide configs
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: scritical/.github
           path: .org-dotgithub
@@ -39,12 +41,12 @@ jobs:
       - name: Ruff formatting
         run: |
           echo "=== Ruff Formatting Check ==="
-          ruff format --check --exit-non-zero-on-fix --config ../.org-dotgithub/ruff.toml .
-        
+          ruff format --check --exit-non-zero-on-fix --config $RUFF_CONFIG .
+      
       - name: Ruff linting
         run: |
           echo "=== Ruff Linting Check ==="
-          ruff check --exit-non-zero-on-fix --config ../.org-dotgithub/ruff.toml .
+          ruff check --exit-non-zero-on-fix --config $RUFF_CONFIG .
 
       - name: McCabe complexity check
         if: inputs.MCCABE

@@ -35,6 +35,9 @@ convention = "numpy"
 [lint.mccabe]
 max-complexity = 10
 
+[lint.isort]
+force-sort-within-sections = true
+
 [format]
 quote-style = "double"
 indent-style = "space"
