@@ -55,9 +55,6 @@ env:
 
 jobs:
   build-and-test:
-    if: |
-      (matrix.TOOLCHAIN == 'gcc' && inputs.GCC) ||
-      (matrix.TOOLCHAIN == 'intel' && inputs.INTEL)
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     strategy:
@@ -73,7 +70,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Check toolchain enabled
+        id: enable
+        run: |
+          enabled=false
+          if [[ "${{ matrix.TOOLCHAIN }}" == "gcc" && "${{ inputs.GCC }}" == "true" ]]; then
+            enabled=true
+          elif [[ "${{ matrix.TOOLCHAIN }}" == "intel" && "${{ inputs.INTEL }}" == "true" ]]; then
+            enabled=true
+          fi
+          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
+
       - name: Set repo environment variables
+        if: steps.enable.outputs.enabled == 'true'
         run: |
           repo_name="${{ github.event.repository.name }}"
           echo "REPO_NAME=$repo_name" >> "$GITHUB_ENV"
@@ -81,12 +90,14 @@ jobs:
           echo "DOCKER_MOUNT_DIR=${{ env.SCRITICAL_HOMEDIR }}/mount/$repo_name" >> "$GITHUB_ENV"
         
       - name: Login to Docker Hub
+        if: steps.enable.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_OAT }}
 
       - name: Start Docker container
+        if: steps.enable.outputs.enabled == 'true'
         run: |
           docker run -t -d --name app \
             --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
@@ -96,14 +107,14 @@ jobs:
           docker exec app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && mkdir -p $DOCKER_WORKING_DIR && cp -a $DOCKER_MOUNT_DIR/. $DOCKER_WORKING_DIR/"
 
       - name: Build
-        if: inputs.BUILD_SCRIPT != '' && inputs.BUILD
+        if: steps.enable.outputs.enabled == 'true' && inputs.BUILD_SCRIPT != '' && inputs.BUILD
         run: |
           docker exec \
             -e CONFIG_FILE="${{ matrix.CONFIG_FILE }}" \
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
 
       - name: Test
-        if: inputs.TEST_SCRIPT != '' && inputs.TEST
+        if: steps.enable.outputs.enabled == 'true' && inputs.TEST_SCRIPT != '' && inputs.TEST
         run: |
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
@@ -111,7 +122,7 @@ jobs:
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
       
       - name: MyPy type checking
-        if: inputs.MYPY
+        if: steps.enable.outputs.enabled == 'true' && inputs.MYPY
         run: |
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
