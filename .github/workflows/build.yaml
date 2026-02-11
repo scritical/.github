@@ -51,7 +51,7 @@ on:
 
 env:
   SCRITICAL_HOMEDIR: /home/scriticaluser
-  BASHRC: ${{ env.SCRITICAL_HOMEDIR }}/.bashrc_scritical
+  BASHRC: /home/scriticaluser/.bashrc_scritical
 
 jobs:
   build-and-test:
