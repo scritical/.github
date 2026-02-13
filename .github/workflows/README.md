@@ -11,6 +11,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `clang_format.yaml` | C/C++ formatting checks |
 | `fprettify.yaml` | Fortran 90 formatting checks |
 | `ruff.yaml` | Python formatting and linting with Ruff |
+| `mypy.yaml` | Python type checking with MyPy |
 | `branch-name-check.yaml` | Enforce branch naming conventions |
 
 ---
@@ -34,7 +35,6 @@ Runs GCC and/or Intel jobs based on `GCC` and `INTEL` input flags.
 | `BUILD_SCRIPT` | string | `.github/build_real.sh` | Path to build script. Empty string skips this step |
 | `TEST_SCRIPT` | string | `.github/test_real.sh` | Path to test script. Empty string skips this step |
 | `TEST` | boolean | `true` | Whether to run the test step |
-| `MYPY` | boolean | `false` | Whether to run mypy type checking |
 
 **Required Secrets:**
 | Name | Description |
@@ -64,6 +64,24 @@ extend = "~/.config/ruff/ruff.toml"
 [lint]
 ignore = ["N802"]
 ```
+
+---
+
+### mypy.yaml
+
+Runs MyPy type checking in the GCC OpenMPI Docker image.
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
+
+**Required Secrets:**
+| Name | Description |
+| :--- | :---------- |
+| `DOCKER_USER` | Docker registry username |
+| `DOCKER_OAT` | Docker registry Organization Access Token |
+
+If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
 
 ---
 
