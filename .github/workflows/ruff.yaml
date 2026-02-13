@@ -38,15 +38,15 @@ jobs:
         run: |
           # Get the org-wide ruff config and copy it to ~/.config/ruff/ruff.toml
           mkdir -p ~/.config/ruff
-          cp .org-dotgithub/ruff.toml ~/.config/ruff/ruff.toml
+          cp ../.org-dotgithub/ruff.toml ~/.config/ruff/ruff.toml
 
-          if [-f ruff.toml]; then
+          if [[ -f ruff.toml ]]; then
             echo "Found repo-specific ruff.toml"
-            RUFF_CONFIG=ruff.toml
+            echo "RUFF_CONFIG=ruff.toml" >> "$GITHUB_ENV"
             cat ruff.toml
           else
             echo "No repo-specific ruff.toml found, using org-wide config"
-            RUFF_CONFIG=~/.config/ruff/ruff.toml
+            echo "RUFF_CONFIG=~/.config/ruff/ruff.toml" >> "$GITHUB_ENV"
           fi
       
       - name: Install Ruff
@@ -75,4 +75,4 @@ jobs:
         run: |
           echo "=== McCabe Complexity Report ==="
           echo "Checking for functions with complexity > 10..."
-          ruff check --select=C90 .
+          ruff check --select=C90 --config $RUFF_CONFIG .
