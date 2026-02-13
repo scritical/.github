@@ -170,7 +170,7 @@ testflo -v . -n 1
 
 ### Step 4: Add Secrets
 
-In your repository settings, add the required secrets:
+In your orginaization settings, add the required secrets:
 - `DOCKER_USER` - Docker organization name
 - `DOCKER_OAT` - Docker Organization Access Token for pulling private images
 
