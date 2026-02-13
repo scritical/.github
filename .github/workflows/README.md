@@ -17,6 +17,8 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 
 ## Workflow Options
 
+Configuration inheritance/overrides are documented in each workflow section below.
+
 ### build.yaml
 
 Docker-based build and test workflow using the `scritical/private-dev` image.
@@ -39,6 +41,8 @@ Runs separate GCC and Intel jobs when the matching config input is provided.
 | :--- | :---------- |
 | `DOCKER_USER` | Docker registry username |
 | `DOCKER_OAT` | Docker registry Organization Access Token |
+
+If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
 
 ---
 
@@ -128,9 +132,7 @@ jobs:
   build:
     uses: scritical/.github/.github/workflows/build.yaml@main
     with:
-      GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
-      BUILD_SCRIPT: .github/build_real.sh
-      TEST_SCRIPT: .github/test_real.sh
+      GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk # If necessary
     secrets:
       DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
@@ -201,28 +203,6 @@ jobs:
     secrets:
       DOCKER_USER: ${{ secrets.DOCKER_USER }}
       DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
-```
-
----
-
-## Configuration Inheritance
-
-Several workflows support configuration inheritance/overrides:
-
-| Tool | Method | Local Config File |
-| :--- | :----- | :---------------- |
-| Ruff | Native `extend` keyword | `ruff.toml` |
-| clang-format | Local file takes precedence | `.clang-format` |
-| fprettify | Local file takes precedence | `.fprettify.rc` |
-
-### Example: Ruff Override
-
-```toml
-# ruff.toml
-extend = "~/.config/ruff/ruff.toml"
-
-[lint]
-ignore = ["N802", "N803"]  # Allow uppercase function/argument names
 ```
 
 ---
