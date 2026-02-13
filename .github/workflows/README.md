@@ -27,9 +27,10 @@ Runs separate GCC and Intel jobs when the matching config input is provided.
 | `TIMEOUT` | number | `120` | Runtime allowed for the job, in minutes |
 | `GCC_CONFIG` | string | `""` | Path to GCC configuration file (from repository root) |
 | `INTEL_CONFIG` | string | `""` | Path to Intel configuration file (from repository root) |
+| `INTEL` | boolean | `false` | Whether to run Intel-specific build and test steps |
+| `GCC` | boolean | `true` | Whether to run GCC-specific build and test steps |
 | `BUILD_SCRIPT` | string | `.github/build_real.sh` | Path to build script. Empty string skips this step |
 | `TEST_SCRIPT` | string | `.github/test_real.sh` | Path to test script. Empty string skips this step |
-| `BUILD` | boolean | `true` | Whether to run the build step |
 | `TEST` | boolean | `true` | Whether to run the test step |
 | `MYPY` | boolean | `false` | Whether to run mypy type checking |
 
