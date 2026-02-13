@@ -16,8 +16,6 @@ jobs:
     defaults:
       run:
         working-directory: project
-    env:
-      RUFF_CONFIG: ../.org-dotgithub/ruff.toml
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -35,6 +33,21 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+
+      - name: Setup Ruff Configuration
+        run: |
+          # Get the org-wide ruff config and copy it to ~/.config/ruff/ruff.toml
+          mkdir -p ~/.config/ruff
+          cp .org-dotgithub/ruff.toml ~/.config/ruff/ruff.toml
+
+          if [-f ruff.toml]; then
+            echo "Found repo-specific ruff.toml"
+            RUFF_CONFIG=ruff.toml
+            cat ruff.toml
+          else
+            echo "No repo-specific ruff.toml found, using org-wide config"
+            RUFF_CONFIG=~/.config/ruff/ruff.toml
+          fi
       
       - name: Install Ruff
         run: |

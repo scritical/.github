@@ -22,7 +22,7 @@ Configuration inheritance/overrides are documented in each workflow section belo
 ### build.yaml
 
 Docker-based build and test workflow using the `scritical/private-dev` image.
-Runs separate GCC and Intel jobs when the matching config input is provided.
+Runs GCC and/or Intel jobs based on `GCC` and `INTEL` input flags.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
@@ -49,7 +49,7 @@ If these secrets are configured at the organization level, callers can use `secr
 ### ruff.yaml
 
 Python formatting and linting using Ruff.
-The workflow checks out the org-wide Ruff configuration from `scritical/.github` and uses `ruff.toml` from that repo as the base config.
+The workflow checks out the org-wide Ruff configuration from `scritical/.github` and uses it for format, lint, and isort checks.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
