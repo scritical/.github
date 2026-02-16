@@ -13,14 +13,6 @@ on:
         type: string
         default: ""
         description: "Path to Intel configuration file"
-      INTEL:
-        type: boolean
-        default: false
-        description: "Whether to run Intel-specific build and test steps (if false, runs GCC steps)"
-      GCC:
-        type: boolean
-        default: true
-        description: "Whether to run GCC-specific build and test steps (if false, runs Intel steps)"
       BUILD_SCRIPT:
         type: string
         default: ".github/build_real.sh"
@@ -47,7 +39,6 @@ env:
 
 jobs:
   build-gcc:
-    if: inputs.GCC
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
@@ -103,7 +94,6 @@ jobs:
           fi
 
   build-intel:
-    if: inputs.INTEL
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
