@@ -151,9 +151,7 @@ jobs:
     uses: scritical/.github/.github/workflows/build.yaml@main
     with:
       GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk # If necessary
-    secrets:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+    secrets: inherit
 
   ruff:
     uses: scritical/.github/.github/workflows/ruff.yaml@main
@@ -208,9 +206,7 @@ jobs:
       GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
       BUILD_SCRIPT: .github/build_real.sh
       TEST_SCRIPT: .github/test_real.sh
-    secrets:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+    secrets: inherit
 
   build-complex:
     uses: scritical/.github/.github/workflows/build.yaml@main
@@ -218,9 +214,7 @@ jobs:
       GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
       BUILD_SCRIPT: .github/build_complex.sh
       TEST_SCRIPT: .github/test_complex.sh
-    secrets:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+    secrets: inherit
 ```
 
 ---
