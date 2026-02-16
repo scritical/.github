@@ -21,10 +21,6 @@ on:
         type: string
         default: ".github/test_real.sh"
         description: "Path to test script"
-      TEST:
-        type: boolean
-        default: true
-        description: "Whether to run the test step"
     secrets:
       DOCKER_USER:
         required: true
@@ -78,7 +74,7 @@ jobs:
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
 
       - name: Test
-        if: inputs.TEST_SCRIPT != '' && inputs.TEST
+        if: inputs.TEST_SCRIPT != ''
         run: |
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
