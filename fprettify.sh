@@ -2,7 +2,7 @@
 
 FPRETTIFY_CONFIG_FILE=""
 LOCAL_CONFIG_FILE=".fprettify.rc"
-GLOBAL_CONFIG_FILE="./.fprettify.rc"
+GLOBAL_CONFIG_FILE="../.github/.fprettify.rc"
 
 if [[ ! -z "$1" ]]; then
     # Offer the option of supplying config file through an argument
