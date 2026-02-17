@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Docker setup
-        uses: scritical/.github/.github/actions/docker-setup@feature-migrate_azure2gha
+        uses: scritical/.github/.github/actions/docker-setup@main
         with:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
@@ -63,7 +63,7 @@ jobs:
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
 
       - name: Docker cleanup
-        uses: scritical/.github/.github/actions/docker-cleanup@feature-migrate_azure2gha
+        uses: scritical/.github/.github/actions/docker-cleanup@main
 
 
   build-intel:
