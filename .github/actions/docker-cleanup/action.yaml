@@ -1,0 +1,15 @@
+name: Docker cleanup
+
+description: Stop and remove the shared Docker container.
+
+runs:
+  using: composite
+  steps:
+    - name: Cleanup
+      if: always()
+      shell: bash
+      run: |
+        # Stop and remove the container only if it exists to avoid noisy errors.
+        if docker ps -a --format '{{.Names}}' | grep -qx app; then
+          docker stop app && docker rm app || true
+        fi

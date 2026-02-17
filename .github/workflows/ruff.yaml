@@ -1,0 +1,83 @@
+on:
+  workflow_call:
+    inputs:
+      MCCABE:
+        type: boolean
+        default: false
+        description: "Enable McCabe complexity check (pass/fail)"
+      ISORT:
+        type: boolean
+        default: false
+        description: "Enable isort import sorting check (pass/fail)"
+      TIMEOUT:
+        type: number
+        default: 20
+        description: "Timeout for the job in minutes"
+
+jobs:
+  ruff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    defaults:
+      run:
+        working-directory: project
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          path: project
+      
+      - name: Checkout org-wide configs
+        uses: actions/checkout@v6
+        with:
+          repository: scritical/.github
+          path: .org-dotgithub
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Setup Ruff Configuration
+        run: |
+          # Get the org-wide ruff config and copy it to ~/.config/ruff/ruff.toml
+          mkdir -p ~/.config/ruff
+          cp ../.org-dotgithub/ruff.toml ~/.config/ruff/ruff.toml
+
+          if [[ -f ruff.toml ]]; then
+            echo "Found repo-specific ruff.toml"
+            echo "RUFF_CONFIG=ruff.toml" >> "$GITHUB_ENV"
+            cat ruff.toml
+          else
+            echo "No repo-specific ruff.toml found, using org-wide config"
+            echo "RUFF_CONFIG=~/.config/ruff/ruff.toml" >> "$GITHUB_ENV"
+          fi
+      
+      - name: Install Ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      
+      - name: Ruff formatting
+        run: |
+          echo "=== Ruff Formatting Check ==="
+          ruff format --check --exit-non-zero-on-fix --config $RUFF_CONFIG .
+      
+      - name: Ruff linting
+        run: |
+          echo "=== Ruff Linting Check ==="
+          ruff check --exit-non-zero-on-fix --config $RUFF_CONFIG .
+      
+      - name: isort check
+        if: inputs.ISORT
+        run: |
+          echo "=== isort Import Sorting Check ==="
+          ruff check --exit-non-zero-on-fix --select=I --config $RUFF_CONFIG .
+
+      - name: McCabe complexity check
+        if: inputs.MCCABE
+        run: |
+          echo "=== McCabe Complexity Report ==="
+          echo "Checking for functions with complexity > 10..."
+          ruff check --select=C90 --config $RUFF_CONFIG .

@@ -1,0 +1,76 @@
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 120
+        description: "Timeout for the job in minutes"
+      GCC_CONFIG:
+        type: string
+        default: ""
+        description: "Path to GCC configuration file"
+      INTEL_CONFIG:
+        type: string
+        default: ""
+        description: "Path to Intel configuration file"
+      BUILD_SCRIPT:
+        type: string
+        default: ".github/build_real.sh"
+        description: "Path to build script"
+      TEST_SCRIPT:
+        type: string
+        default: ".github/test_real.sh"
+        description: "Path to test script"
+    secrets:
+      DOCKER_USER:
+        required: true
+        description: "Docker registry username"
+      DOCKER_OAT:
+        required: true
+        description: "Docker registry Organization Access Token"
+
+jobs:
+  build-gcc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    env:
+      DOCKER_TAG: u24-gcc-ompi-latest
+      CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
+    steps: &build_steps
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Docker setup
+        uses: scritical/.github/.github/actions/docker-setup@main
+        with:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+          DOCKER_TAG: ${{ env.DOCKER_TAG }}
+
+      - name: Build
+        if: inputs.BUILD_SCRIPT != ''
+        run: |
+          docker exec \
+            -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+
+      - name: Test
+        if: inputs.TEST_SCRIPT != ''
+        run: |
+          docker exec \
+            -e AGENT_NAME="${{ runner.name }}" \
+            -e BUILD_REASON="${{ github.event_name }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
+
+      - name: Docker cleanup
+        uses: scritical/.github/.github/actions/docker-cleanup@main
+
+
+  build-intel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    env:
+      DOCKER_TAG: u24-intel-impi-latest
+      CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
+    steps: *build_steps
+          

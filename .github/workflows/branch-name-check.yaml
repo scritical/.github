@@ -1,15 +1,9 @@
-name: Branch Name Check
-
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, edited]
-    branches:
-      - main
-      - 'client-*'
+  workflow_call:
 
 jobs:
   check-branch-name:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check branch name for main
         if: github.base_ref == 'main'
@@ -34,11 +28,11 @@ jobs:
           echo "Source branch: $BRANCH_NAME"
           echo "Target branch: ${{ github.base_ref }}"
 
-          if [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]] || [[ $BRANCH_NAME == hotfix-* ]]; then
+          if [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]] || [[ $BRANCH_NAME == hotfix-* ]] || [[ $BRANCH_NAME == main ]]; then
             echo "Branch name is valid"
             exit 0
           else
             echo "Invalid branch name for client pull request"
-            echo "Branch name must start with 'feature-', 'bugfix-', or 'hotfix-'"
+            echo "Branch name must start with 'feature-', 'bugfix-', or 'hotfix-' or be 'main'"
             exit 1
           fi
