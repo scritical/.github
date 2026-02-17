@@ -13,10 +13,6 @@ on:
         required: true
         description: "Docker registry Organization Access Token"
 
-env:
-  SCRITICAL_HOMEDIR: /home/scriticaluser
-  BASHRC: /home/scriticaluser/.bashrc_scritical
-
 jobs:
   mypy:
     runs-on: ubuntu-24.04
@@ -28,7 +24,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Docker setup
-        uses: ./.github/actions/docker-setup
+        uses: scritical/.github/.github/actions/docker-setup@feature-migrate_azure2gha
         with:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
@@ -42,5 +38,5 @@ jobs:
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy ."
 
       - name: Docker cleanup
-        uses: ./.github/actions/docker-cleanup
+        uses: scritical/.github/.github/actions/docker-cleanup@feature-migrate_azure2gha
 
