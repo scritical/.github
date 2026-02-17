@@ -27,12 +27,13 @@ runs:
     - name: Set repo environment variables
       shell: bash
       run: |
-        echo "SCRITICAL_HOMEDIR=${{ inputs.SCRITICAL_HOMEDIR }}" >> "$GITHUB_ENV"
+        scritical_homedir="${{ inputs.SCRITICAL_HOMEDIR }}"
+        echo "SCRITICAL_HOMEDIR=$scritical_homedir" >> "$GITHUB_ENV"
         echo "BASHRC=${{ inputs.BASHRC }}" >> "$GITHUB_ENV"
         repo_name="${{ github.event.repository.name }}"
         echo "REPO_NAME=$repo_name" >> "$GITHUB_ENV"
-        echo "DOCKER_WORKING_DIR=${{ env.SCRITICAL_HOMEDIR }}/repos/$repo_name" >> "$GITHUB_ENV"
-        echo "DOCKER_MOUNT_DIR=${{ env.SCRITICAL_HOMEDIR }}/mount/$repo_name" >> "$GITHUB_ENV"
+        echo "DOCKER_WORKING_DIR=$scritical_homedir/repos/$repo_name" >> "$GITHUB_ENV"
+        echo "DOCKER_MOUNT_DIR=$scritical_homedir/mount/$repo_name" >> "$GITHUB_ENV"
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
