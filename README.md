@@ -11,7 +11,13 @@ This repo stores the following shared repository settings/configurations/templat
   - `build`
     - Docker build
     - Integration testing
-    - `mypy`
+    - Uses `docker-setup` and `docker-cleanup`
+  - `mypy`
+    - Type checking
+    - Uses `docker-setup` and `docker-cleanup`
+  - `composite actions`
+    - `docker-setup`
+    - `docker-cleanup`
   - `fprettify`
   - `tapenade`
   - `branch-name-check`

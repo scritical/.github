@@ -16,6 +16,31 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 
 ---
 
+## Composite Actions
+
+Shared composite actions used by workflows and repository CI files.
+
+| Action | Description |
+| :----- | :---------- |
+| `docker-setup` | Set Docker env vars, login, and start the container |
+| `docker-cleanup` | Stop and remove the container |
+
+### docker-setup
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `SCRITICAL_HOMEDIR` | string | `/home/scriticaluser` | Base home directory for container paths |
+| `BASHRC` | string | `/home/scriticaluser/.bashrc_scritical` | Bashrc for container environment |
+| `DOCKER_USER` | string | n/a | Docker registry username |
+| `DOCKER_OAT` | string | n/a | Docker registry Organization Access Token |
+| `DOCKER_TAG` | string | n/a | Docker image tag to use |
+
+### docker-cleanup
+
+No inputs.
+
+---
+
 ## Workflow Options
 
 Configuration inheritance/overrides are documented in each workflow section below.
