@@ -1,0 +1,41 @@
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 10
+        description: "Timeout for the job in minutes"
+      TAPENADE_SCRIPT:
+        type: string
+        default: ".github/build_tapenade.sh"
+        description: "Path to Tapenade build script"
+
+jobs:
+  tapenade:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Install and run Tapenade
+        run: |
+          # Download Tapenade 3.16 (tapenade_3.16-v2-723-ge8da61555.tar)
+          TAPENADE_URL="https://gitlab.inria.fr/tapenade/tapenade/-/package_files/112870/download"
+          wget "$TAPENADE_URL" -O tapenade_3.16.tar
+          tar -xzf tapenade_3.16.tar
+          export PATH=$(pwd)/tapenade_3.16/bin:$PATH
+
+          # Run Tapenade
+          touch config.mk  # empty config file to make "make" happy
+          bash ${{ inputs.TAPENADE_SCRIPT }}
+
+      - name: Check for changes
+        run: |
+          git diff --exit-code || (echo "Tapenade produced changes. Please regenerate and commit." && exit 1)

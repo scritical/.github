@@ -1,14 +1,24 @@
 # .github
 This repo stores the following shared repository settings/configurations/templates:
 - Issue and pull request templates on GitHub
-- Shared configurations for
-  - `pre-commit`
-  - `ruff`
-  - `isort`
-  - `pylint`
-  - `codecov`
-  - `mypy`
-- Shared configurations for Azure Pipelines
 - Shared configurations for GitHub Actions
+  - `ruff`
+    - formatting
+    - linting
+    - isort
+    - McCabe Complexity
+  - `clang_format`
+  - `build`
+    - Docker build
+    - Integration testing
+    - Uses `docker-setup` and `docker-cleanup`
+  - `mypy`
+    - Type checking
+    - Uses `docker-setup` and `docker-cleanup`
+  - `composite actions`
+    - `docker-setup`
+    - `docker-cleanup`
+  - `fprettify`
+  - `tapenade`
+  - `branch-name-check`
 - Issue/PR labels shared across the organization
-- Configuration script for the build bot

@@ -1,13 +1,32 @@
 on:
   workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 10
+        description: "Timeout for the job in minutes"
 
 jobs:
   clang_format:
     runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
     steps:
-      - name: Install dependencies
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install clang-format
+        run: sudo apt-get install clang-format-20 -y
+
+      - name: Get clang-format config
         run: |
-          sudo apt-get install clang-format-10 -y
-      - name: Run clang_format
+          LOCAL_CONFIG_FILE=".clang-format"
+          GLOBAL_CONFIG_URL="https://raw.githubusercontent.com/scritical/.github/main/.clang-format"
+
+          if [[ ! -f "$LOCAL_CONFIG_FILE" ]]; then
+            echo "Downloading global clang-format config..."
+            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global clang-format config found; proceeding without a config file. The subsequent clang-format step may fail because -style=file requires a .clang-format configuration."
+          fi
+
+      - name: Run clang-format
         run: |
-          bash ./.github/clang_format.sh
+          find . -iname '*.h' -o -iname '*.hpp' -o -iname '*.c' -o -iname '*.cpp' | xargs clang-format -style=file --dry-run --Werror

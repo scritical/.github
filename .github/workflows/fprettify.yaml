@@ -1,0 +1,52 @@
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 10
+        description: "Timeout for the job in minutes"
+
+jobs:
+  fprettify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install fprettify
+        run: pip install fprettify==0.3.7
+
+      - name: Get fprettify config
+        run: |
+          LOCAL_CONFIG_FILE=".fprettify.rc"
+          GLOBAL_CONFIG_URL="https://raw.githubusercontent.com/scritical/.github/main/.fprettify.rc"
+
+          if [[ ! -f "$LOCAL_CONFIG_FILE" ]]; then
+            echo "Downloading global fprettify config..."
+            wget "$GLOBAL_CONFIG_URL" -O "$LOCAL_CONFIG_FILE" || echo "No global config found; fprettify will use its built-in defaults"
+          fi
+
+      - name: Run fprettify
+        run: |
+          CONFIG_FILE=".fprettify.rc"
+          CONFIG_ARG=""
+          if [[ -f "$CONFIG_FILE" ]]; then
+            CONFIG_ARG="--config-file $CONFIG_FILE"
+          fi
+
+          # Run fprettify on non-differentiated Fortran 90 source files
+          find . -type f -iname '*.f90' ! -iname '*_b.f90' ! -iname '*_d.f90' -print0 | while read -d $'\0' fileName
+          do
+            echo "Checking $fileName"
+            fprettify $CONFIG_ARG "$fileName"
+          done
+
+      - name: Check for changes
+        run: |
+          git diff --summary --exit-code || (echo "fprettify produced changes. Please format and commit." && exit 1)

@@ -1,5 +1,5 @@
 # Minimum Python syntax support
-target-version = "py39"
+target-version = "py311"
 
 line-length = 120
 
@@ -18,7 +18,7 @@ ignore = [
     "E501", # line length, exceeded by some docstrings
     "W605", # TODO (to be fixed), invalid escape sequence, necessary for sphinx directives in docstrings but should switch to raw string
     "D301", # Same reason as W605
-    "D10", # D100-107, missing docstring in public function, class etc (yes we should have docstrings for all public methods, but that is a pipe dream)
+    "D10",  # D100-107, missing docstring in public function, class etc (yes we should have docstrings for all public methods, but that is a pipe dream)
     "D400", # First line of docstring should end with a period (assumes the summary fits on one line, which is not always the case)
     "D205", # 1 blank line required between summary line and description (Makes same assumption as D400)
     "D200", # One-line docstring should fit on one line, don't like this because it enforces inconsistent formatting between one-line and multi-line docstrings
@@ -27,16 +27,16 @@ ignore = [
     "D404", # First word of the docstring should not be "This" (Probably a good rule to follow going forward but it occurs in so many places in our code and it's not a big enough issue to warrant fixing)
 ]
 
-select = [
-    "B",
-    "D",
-    "E",
-    "F",
-    "W",
-]
+select = ["B", "D", "E", "F", "W"]
 
 [lint.pydocstyle]
 convention = "numpy"
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.isort]
+force-sort-within-sections = true
 
 [format]
 quote-style = "double"
