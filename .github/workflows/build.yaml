@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
+      SCRITICAL_HOMEDIR: /home/scriticaluser
+      BASHRC: /home/scriticaluser/.bashrc_scritical
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
     steps: &build_steps
