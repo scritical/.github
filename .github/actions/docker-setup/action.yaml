@@ -3,6 +3,14 @@ name: Docker setup
 description: Shared steps to prepare repo environment and start container.
 
 inputs:
+  SCRITICAL_HOMEDIR:
+    description: Base home directory for container paths
+    required: false
+    default: /home/scriticaluser
+  BASHRC:
+    description: Path to bashrc for container environment
+    required: false
+    default: /home/scriticaluser/.bashrc_scritical
   DOCKER_USER:
     description: Docker registry username
     required: true
@@ -19,6 +27,8 @@ runs:
     - name: Set repo environment variables
       shell: bash
       run: |
+        echo "SCRITICAL_HOMEDIR=${{ inputs.SCRITICAL_HOMEDIR }}" >> "$GITHUB_ENV"
+        echo "BASHRC=${{ inputs.BASHRC }}" >> "$GITHUB_ENV"
         repo_name="${{ github.event.repository.name }}"
         echo "REPO_NAME=$repo_name" >> "$GITHUB_ENV"
         echo "DOCKER_WORKING_DIR=${{ env.SCRITICAL_HOMEDIR }}/repos/$repo_name" >> "$GITHUB_ENV"
