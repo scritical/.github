@@ -4,11 +4,11 @@ line-length = 120
 select = ["E", "C", "OB", "MOD", "S", "FORT"]
 # Style preferences
 ignore = [
-    "C003",  # implicit-external-procedures: Only valid for Fortran 2018+
-    "C132",  # default-public-accessibility
-    "S201",  # superfluous-implicit-none
-    "C141",  # missing-exit-or-cycle-label
-    "C121"   # use-all
+    "C003", # implicit-external-procedures: Only valid for Fortran 2018+
+    "C132", # default-public-accessibility
+    "S201", # superfluous-implicit-none
+    "C141", # missing-exit-or-cycle-label
+    "S102", # 2 space before inline comment
 ]
 # Exclude differentiated files by pattern
 exclude = ["*_b.f*", "*_d.f*"]
