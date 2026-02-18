@@ -47,8 +47,7 @@ Configuration inheritance/overrides are documented in each workflow section belo
 
 ### build.yaml
 
-Docker-based build and test workflow using the `scritical/private-dev` image.
-Runs GCC and/or Intel jobs based on `GCC` and `INTEL` input flags.
+Docker-based build and test workflow using the `scritical/private-dev` image with GCC and Intel compilers.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
@@ -75,6 +74,7 @@ The workflow checks out the org-wide Ruff configuration from `scritical/.github`
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
+| `TIMEOUT` | number | `20` | Runtime allowed for the job, in minutes |
 | `MCCABE` | boolean | `false` | Enable McCabe complexity check (pass/fail, max complexity = 10) |
 | `ISORT` | boolean | `false` | Enable import sorting check (pass/fail) |
 
@@ -151,7 +151,7 @@ Fortran 90 code formatting checks using fprettify.
 Enforces branch naming conventions for pull requests:
 
 - For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
-- For PRs targeting `client-*`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
+- For PRs targeting `client-*`, source branches must be `main` or start with `feature-`, `bugfix-`, or `hotfix-`.
 
 ## Setting Up Workflows
 
@@ -210,7 +210,7 @@ testflo -v . -n 1
 
 ### Step 4: Add Secrets
 
-In your orginaization settings, add the required secrets:
+In your organization settings, add the required secrets:
 - `DOCKER_USER` - Docker organization name
 - `DOCKER_OAT` - Docker Organization Access Token for pulling private images
 
