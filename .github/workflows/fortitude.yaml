@@ -5,10 +5,6 @@ on:
         type: number
         default: 10
         description: "Timeout for the job in minutes"
-      FAIL:
-        type: boolean
-        default: true
-        description: "Fail the workflow on fortitude issues"
 
 jobs:
   fortitude:
@@ -45,8 +41,4 @@ jobs:
           fi
 
           # Run fortitude with appropriate fail behavior
-          if [[ ${{ inputs.FAIL }} == true ]]; then
-            fortitude $CONFIG_ARG check
-          else
-            fortitude $CONFIG_ARG check --exit-zero
-          fi
+          fortitude $CONFIG_ARG check
