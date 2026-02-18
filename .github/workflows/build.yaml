@@ -15,11 +15,11 @@ on:
         description: "Path to Intel configuration file"
       BUILD_SCRIPT:
         type: string
-        default: ".github/build_real.sh"
+        default: ".github/build.sh"
         description: "Path to build script"
       TEST_SCRIPT:
         type: string
-        default: ".github/test_real.sh"
+        default: ".github/test.sh"
         description: "Path to test script"
     secrets:
       DOCKER_USER:

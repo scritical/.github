@@ -55,8 +55,8 @@ Runs GCC and/or Intel jobs based on `GCC` and `INTEL` input flags.
 | `TIMEOUT` | number | `120` | Runtime allowed for the job, in minutes |
 | `GCC_CONFIG` | string | `""` | Path to GCC configuration file (from repository root) |
 | `INTEL_CONFIG` | string | `""` | Path to Intel configuration file (from repository root) |
-| `BUILD_SCRIPT` | string | `.github/build_real.sh` | Path to build script. Empty string skips this step |
-| `TEST_SCRIPT` | string | `.github/test_real.sh` | Path to test script. Empty string skips this step |
+| `BUILD_SCRIPT` | string | `.github/build.sh` | Path to build script. Empty string skips this step |
+| `TEST_SCRIPT` | string | `.github/test.sh` | Path to test script. Empty string skips this step |
 
 **Required Secrets:**
 | Name | Description |
@@ -187,7 +187,7 @@ jobs:
 
 ### Step 2: Write Build Script
 
-Create `.github/build_real.sh` in your repository:
+Create `.github/build.sh` in your repository:
 
 ```bash
 #!/bin/bash
@@ -199,7 +199,7 @@ pip install .
 
 ### Step 3: Write Test Script
 
-Create `.github/test_real.sh` in your repository:
+Create `.github/test.sh` in your repository:
 
 ```bash
 #!/bin/bash
