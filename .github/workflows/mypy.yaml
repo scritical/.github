@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Docker setup
-        uses: scritical/.github/.github/actions/docker-setup@main
+        uses: scritical/.github/.github/actions/docker-setup@feature-bitwarden_auth
         with:
           BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
@@ -34,5 +34,5 @@ jobs:
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy ."
 
       - name: Docker cleanup
-        uses: scritical/.github/.github/actions/docker-cleanup@main
+        uses: scritical/.github/.github/actions/docker-cleanup@feature-bitwarden_auth
 
