@@ -31,9 +31,8 @@ Shared composite actions used by workflows and repository CI files.
 | :--- | :--- | :------ | :---------- |
 | `SCRITICAL_HOMEDIR` | string | `/home/scriticaluser` | Base home directory for container paths |
 | `BASHRC` | string | `/home/scriticaluser/.bashrc_scritical` | Bashrc for container environment |
-| `DOCKER_USER` | string | n/a | Docker registry username |
-| `DOCKER_OAT` | string | n/a | Docker registry Organization Access Token |
 | `DOCKER_TAG` | string | n/a | Docker image tag to use |
+| `BW_ACCESS_TOKEN` | string | n/a | Bitwarden access token |
 
 ### docker-cleanup
 
@@ -60,8 +59,7 @@ Docker-based build and test workflow using the `scritical/private-dev` image wit
 **Required Secrets:**
 | Name | Description |
 | :--- | :---------- |
-| `DOCKER_USER` | Docker registry username |
-| `DOCKER_OAT` | Docker registry Organization Access Token |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
 
 If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
 
@@ -100,8 +98,7 @@ Runs MyPy type checking in the GCC OpenMPI Docker image.
 **Required Secrets:**
 | Name | Description |
 | :--- | :---------- |
-| `DOCKER_USER` | Docker registry username |
-| `DOCKER_OAT` | Docker registry Organization Access Token |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
 
 If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
 
@@ -211,8 +208,7 @@ testflo -v . -n 1
 ### Step 4: Add Secrets
 
 In your organization settings, add the required secrets:
-- `DOCKER_USER` - Docker organization name
-- `DOCKER_OAT` - Docker Organization Access Token for pulling private images
+- `BW_ACCESS_TOKEN` - Bitwarden access token
 
 ---
 
