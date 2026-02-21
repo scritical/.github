@@ -1,0 +1,59 @@
+name: Rotate Docker OAT
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rotate-oat:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_OAT_SECRET_ID: e172281c-7428-412c-a86c-b3f7010f81bd
+      DOCKERHUB_ORG: scritical
+    steps:
+      - name: Install Bitwarden Secrets Manager CLI
+        run: |
+          curl -fsSL -o /usr/local/bin/bws \
+            https://github.com/bitwarden/sdk-sm/releases/latest/download/bws-x86_64-unknown-linux-gnu
+          chmod +x /usr/local/bin/bws
+          bws --version
+
+      - name: Fetch Docker Hub credentials from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            ${{ secrets.DOCKERHUB_USERNAME_SECRET_ID }} > DOCKERHUB_USERNAME
+            ${{ secrets.DOCKERHUB_PASSWORD_SECRET_ID }} > DOCKERHUB_PASSWORD
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate new Docker Hub OAT
+        env:
+          DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ env.DOCKERHUB_PASSWORD }}
+          DOCKERHUB_ORG: ${{ env.DOCKERHUB_ORG }}
+        run: python .github/scripts/dockerhub_oat_manager.py --create
+
+      - name: Update Bitwarden secret with new OAT
+        if: ${{ success() }}
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          bws secret edit "$DOCKER_OAT_SECRET_ID" --value "$NEW_OAT"
+
+      - name: Revoke previous Docker Hub OATs
+        if: ${{ success() }}
+        env:
+          DOCKERHUB_ORG: ${{ env.DOCKERHUB_ORG }}
+          DOCKERHUB_BEARER: ${{ env.DOCKERHUB_BEARER }}
+          NEW_OAT_ID: ${{ env.NEW_OAT_ID }}
+        run: python .github/scripts/dockerhub_oat_manager.py --revoke
