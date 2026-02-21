@@ -11,15 +11,13 @@ inputs:
     description: Path to bashrc for container environment
     required: false
     default: /home/scriticaluser/.bashrc_scritical
-  DOCKER_USER:
-    description: Docker registry username
-    required: true
-  DOCKER_OAT:
-    description: Docker registry Organization Access Token
-    required: true
   DOCKER_TAG:
     description: Docker image tag to use
     required: true
+secrets:
+  BW_ACCESS_TOKEN:
+    required: true
+    description: "Bitwarden machine account access token"
 
 runs:
   using: composite
@@ -35,11 +33,19 @@ runs:
         echo "DOCKER_WORKING_DIR=$scritical_homedir/repos/$repo_name" >> "$GITHUB_ENV"
         echo "DOCKER_MOUNT_DIR=$scritical_homedir/mount/$repo_name" >> "$GITHUB_ENV"
 
+    - name: Get Docker credentials from Bitwarden
+      uses: bitwarden/sm-action@v2
+      with:
+        access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+        secrets: |
+          71828b4d-6441-4e7d-b7f5-b3f8002289a5 > DOCKER_USERNAME
+          e172281c-7428-412c-a86c-b3f7010f81bd > DOCKER_OAT
+
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
-        username: ${{ inputs.DOCKER_USER }}
-        password: ${{ inputs.DOCKER_OAT }}
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ env.DOCKER_OAT }}
 
     - name: Start Docker container
       shell: bash
