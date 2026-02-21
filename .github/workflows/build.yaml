@@ -21,6 +21,10 @@ on:
         type: string
         default: ".github/test.sh"
         description: "Path to test script"
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
 
 jobs:
   build-gcc:
@@ -36,6 +40,7 @@ jobs:
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: Build

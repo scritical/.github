@@ -14,10 +14,9 @@ inputs:
   DOCKER_TAG:
     description: Docker image tag to use
     required: true
-secrets:
   BW_ACCESS_TOKEN:
+    description: Bitwarden machine account access token
     required: true
-    description: "Bitwarden machine account access token"
 
 runs:
   using: composite
@@ -36,7 +35,7 @@ runs:
     - name: Get Docker credentials from Bitwarden
       uses: bitwarden/sm-action@v2
       with:
-        access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+        access_token: ${{ inputs.BW_ACCESS_TOKEN }}
         secrets: |
           71828b4d-6441-4e7d-b7f5-b3f8002289a5 > DOCKER_USERNAME
           e172281c-7428-412c-a86c-b3f7010f81bd > DOCKER_OAT

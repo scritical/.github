@@ -5,6 +5,10 @@ on:
         type: number
         default: 30
         description: "Timeout for the job in minutes"
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
 
 jobs:
   mypy:
@@ -19,6 +23,7 @@ jobs:
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: MyPy type checking
