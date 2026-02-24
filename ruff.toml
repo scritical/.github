@@ -37,6 +37,12 @@ max-complexity = 10
 
 [lint.isort]
 force-sort-within-sections = true
+future = "Future modules"
+standard-library = "Standard Python modules"
+third-party = "External modules"
+first-party = "First party modules"
+local-folder = "Local modules"
+default-section = "first-party"
 
 [format]
 quote-style = "double"
