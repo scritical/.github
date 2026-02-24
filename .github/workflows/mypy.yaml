@@ -31,7 +31,7 @@ jobs:
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
             -e BUILD_REASON="${{ github.event_name }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy ."
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy"
 
       - name: Docker cleanup
         uses: scritical/.github/.github/actions/docker-cleanup@main
