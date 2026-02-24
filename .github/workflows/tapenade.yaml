@@ -28,9 +28,10 @@ jobs:
         run: |
           # Download Tapenade 3.16 (tapenade_3.16-v2-723-ge8da61555.tar)
           TAPENADE_URL="https://gitlab.inria.fr/tapenade/tapenade/-/package_files/112870/download"
-          wget "$TAPENADE_URL" -O tapenade_3.16.tar
-          tar -xzf tapenade_3.16.tar
-          export PATH=$(pwd)/tapenade_3.16/bin:$PATH
+          export TAPENADE_HOME=$(pwd)/tapenade_3.16
+          wget "$TAPENADE_URL" -O $TAPENADE_HOME.tar
+          tar -xzf $TAPENADE_HOME.tar
+          export PATH=$TAPENADE_HOME/bin:$PATH
 
           # Run Tapenade
           touch config.mk  # empty config file to make "make" happy
