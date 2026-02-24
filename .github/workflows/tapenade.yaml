@@ -28,7 +28,7 @@ jobs:
         run: |
           # Download Tapenade 3.16 (tapenade_3.16-v2-723-ge8da61555.tar)
           TAPENADE_URL="https://gitlab.inria.fr/tapenade/tapenade/-/package_files/112870/download"
-          export TAPENADE_HOME=$(pwd)/tapenade$_3.16
+          export TAPENADE_HOME=$(pwd)/tapenade_3.16
           wget "$TAPENADE_URL" -O $TAPENADE_HOME.tar
           tar -xzf $TAPENADE_HOME.tar
           export PATH=$TAPENADE_HOME/bin:$PATH
