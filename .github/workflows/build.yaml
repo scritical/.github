@@ -22,12 +22,9 @@ on:
         default: ".github/test.sh"
         description: "Path to test script"
     secrets:
-      DOCKER_USER:
+      BW_ACCESS_TOKEN:
         required: true
-        description: "Docker registry username"
-      DOCKER_OAT:
-        required: true
-        description: "Docker registry Organization Access Token"
+        description: "Bitwarden machine account access token"
 
 jobs:
   build-gcc:
@@ -43,8 +40,7 @@ jobs:
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: Build
