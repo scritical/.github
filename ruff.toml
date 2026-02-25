@@ -37,7 +37,6 @@ max-complexity = 10
 
 [lint.isort]
 force-sort-within-sections = true
-default-section = "first-party"
 
 [lint.isort.import-heading]
 future = "Future modules"
