@@ -34,7 +34,7 @@ jobs:
           count=$((major + minor + patch))
 
           if [[ $count -gt 1 ]]; then
-            echo "Error: PR title contains more than one version bump keyword (major, minor, patch)."
+            echo "Error: PR title contains more than one version bump keyword ([major], [minor], [patch])."
             exit 1
           fi
 
@@ -45,7 +45,7 @@ jobs:
           elif [[ $patch -eq 1 ]]; then
             bump="patch"
           else
-            echo "Error: PR title does not contain any version bump keyword (major, minor, patch)."
+            echo "Error: PR title does not contain any version bump keyword ([major], [minor], [patch])."
             exit 1
           fi
 
