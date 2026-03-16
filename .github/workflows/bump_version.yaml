@@ -1,0 +1,34 @@
+name: Bump version
+on:
+  workflow_call:
+
+jobs:
+  extract_version_bump:
+    uses: scritical/.github/.github/workflows/extract_version_bump.yaml@feature-versioning
+
+  bump_version:
+    needs: extract_version_bump
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.merge_commit_sha }}
+        fetch-depth: '0'
+
+    - name: Bump version and push tag
+      uses: anothrNick/github-tag-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAG_PREFIX: v
+
+        # get bump from PR title
+        DEFAULT_BUMP: ${{ needs.extract_version_bump.outputs.version_bump }}
+
+        # disable commit message parsing
+        MAJOR_STRING_TOKEN: '#verylongstringnobodyisevergoingtouseinacommitmessagef6ca8559220016043ac9455b71eb0b10'
+        MINOR_STRING_TOKEN: '#verylongstringnobodyisevergoingtouseinacommitmessagea7d34e1a85bd929e6b171bfef4490967'
+        PATCH_STRING_TOKEN: '#verylongstringnobodyisevergoingtouseinacommitmessage98833a895e50de26dd5ec1fa3d8cc8d3'
+        NONE_STRING_TOKEN: '#verylongstringnobodyisevergoingtouseinacommitmessage9057a93be739dc14f20b218e554ad3e63'
