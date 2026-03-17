@@ -4,7 +4,7 @@ on:
 
 jobs:
   extract_version_bump:
-    uses: scritical/.github/.github/workflows/extract_version_bump.yaml@feature-versioning
+    uses: scritical/.github/.github/workflows/extract_version_bump.yaml@main
 
   bump_version:
     needs: extract_version_bump
