@@ -29,10 +29,8 @@ on:
       BW_ACCESS_TOKEN:
         required: true
         description: "Bitwarden machine account access token"
-
-permissions:
-  id-token: write   # This is required for requesting the JWT
-  contents: read 
+      AWS_ROLE_ARN:
+        required: true
 
 jobs:
   build-gcc:
@@ -41,6 +39,7 @@ jobs:
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
+
     steps: &build_steps
       - name: Checkout repository
         uses: actions/checkout@v6
