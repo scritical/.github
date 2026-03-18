@@ -4,6 +4,7 @@ description: Creates an Python environment, installs DVC and pulls files from th
 
 
 runs:
+  using: composite
   steps:
     - name: Configure AWS Credentials for DVC
       uses: aws-actions/configure-aws-credentials@v4
