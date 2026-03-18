@@ -21,6 +21,10 @@ on:
         type: string
         default: ".github/test.sh"
         description: "Path to test script"
+      USE_DVC:
+        type: boolean
+        default: false
+        description: "Enables DVC to pull reference data for tests."
     secrets:
       BW_ACCESS_TOKEN:
         required: true
@@ -49,6 +53,17 @@ jobs:
           docker exec \
             -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+
+      - name: Configure AWS Credentials for DVC
+        if: inputs.USE_DVC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Pull DVC files
+        if: inputs.USE_DVC
+        run: dvc pull
 
       - name: Test
         if: inputs.TEST_SCRIPT != ''
