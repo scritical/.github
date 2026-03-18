@@ -29,6 +29,9 @@ on:
       BW_ACCESS_TOKEN:
         required: true
         description: "Bitwarden machine account access token"
+  permissions:
+    id-token: write
+    contents: read
 
 jobs:
   build-gcc:
@@ -40,6 +43,13 @@ jobs:
     steps: &build_steps
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials for DVC
+        if: inputs.USE_DVC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
@@ -54,12 +64,6 @@ jobs:
             -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
 
-      - name: Configure AWS Credentials for DVC
-        if: inputs.USE_DVC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-2
 
       - name: Pull DVC files
         if: inputs.USE_DVC
