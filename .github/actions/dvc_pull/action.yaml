@@ -1,6 +1,6 @@
 name: DVC pull
 
-description: Creates an Python environment, installs DVC and pulls files from configured S3 bucket.
+description: Creates an Python environment, installs DVC and pulls files from the S3 bucket configured in the repos .dvc/config file.
 
 
 runs:
@@ -28,7 +28,7 @@ runs:
         pip install --upgrade pip
         pip install dvc[s3]==3.66.1
 
-   - name: Remove 'profile' section from dvc config file
+    - name: Remove 'profile' section from dvc config file
       shell: bash
       run: |
         sed -i '/profile/d' .dvc/config
