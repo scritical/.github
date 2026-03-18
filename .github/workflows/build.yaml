@@ -67,7 +67,7 @@ jobs:
         run: |
           docker exec \
             -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && sed -i '' '/^\s*profile\s*=/d' .dvc/config && dvc pull"
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && sed -i '' '/profile/d' .dvc/config && dvc pull"
 
       - name: Test
         if: inputs.TEST_SCRIPT != ''
