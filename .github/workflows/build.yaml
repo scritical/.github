@@ -47,7 +47,7 @@ jobs:
 
       - name: Pull DVC files
         if: inputs.USE_DVC
-        uses: scritical/.github/.github/actions/dvc_pull@feature-dvc
+        uses: scritical/.github/.github/actions/dvc_pull@main
         with:
           AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
