@@ -30,6 +30,10 @@ on:
         required: true
         description: "Bitwarden machine account access token"
 
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read 
+
 jobs:
   build-gcc:
     runs-on: ubuntu-24.04
