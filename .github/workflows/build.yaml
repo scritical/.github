@@ -29,8 +29,6 @@ on:
       BW_ACCESS_TOKEN:
         required: true
         description: "Bitwarden machine account access token"
-      AWS_ROLE_ARN:
-        required: true
 
 jobs:
   build-gcc:
