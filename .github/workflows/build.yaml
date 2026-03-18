@@ -65,9 +65,8 @@ jobs:
       - name: Pull DVC files
         if: inputs.USE_DVC
         run: |
-          docker exec \
-            -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && sed -i '/profile/d' .dvc/config && dvc pull"
+          sed -i '/profile/d' .dvc/config
+          dvc pull
 
       - name: Test
         if: inputs.TEST_SCRIPT != ''
