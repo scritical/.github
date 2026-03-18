@@ -21,10 +21,17 @@ on:
         type: string
         default: ".github/test.sh"
         description: "Path to test script"
+      USE_DVC:
+        type: boolean
+        default: false
+        description: "Enables DVC to pull reference data for tests."
     secrets:
       BW_ACCESS_TOKEN:
         required: true
         description: "Bitwarden machine account access token"
+      AWS_ROLE_ARN:
+        required: false
+        description: "AWS IAM role ARN for DVC S3 access (required when USE_DVC is true)"
 
 jobs:
   build-gcc:
@@ -33,9 +40,16 @@ jobs:
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
+
     steps: &build_steps
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Pull DVC files
+        if: inputs.USE_DVC
+        uses: scritical/.github/.github/actions/dvc_pull@main
+        with:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main

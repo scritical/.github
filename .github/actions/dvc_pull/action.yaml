@@ -1,0 +1,45 @@
+name: DVC pull
+
+description: Creates an Python environment, installs DVC and pulls files from the S3 bucket configured in the repos .dvc/config file.
+
+inputs:
+  AWS_ROLE_ARN:
+    description: AWS IAM role ARN to assume for S3 access
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS Credentials for DVC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.AWS_ROLE_ARN }}
+        aws-region: us-east-2
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Create venv and install dependencies
+      shell: bash
+      run: |
+        python -m venv .venv
+        echo "${{ github.workspace }}/.venv/bin" >> $GITHUB_PATH
+
+    - name: Install DVC with S3 support
+      shell: bash
+      run: |
+        pip install --upgrade pip
+        pip install dvc[s3]==3.66.1
+
+    - name: Remove 'profile' section from dvc config file
+      shell: bash
+      run: |
+        sed -i '/profile/d' .dvc/config
+
+    - name: Pull files
+      shell: bash
+      run: |
+        dvc pull
+
