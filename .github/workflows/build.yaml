@@ -49,6 +49,12 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
+      - name: Pull DVC files
+        if: inputs.USE_DVC
+        run: |
+          sed -i '/profile/d' .dvc/config
+          dvc pull
+
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
@@ -61,12 +67,6 @@ jobs:
           docker exec \
             -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
-
-      - name: Pull DVC files
-        if: inputs.USE_DVC
-        run: |
-          sed -i '/profile/d' .dvc/config
-          dvc pull
 
       - name: Test
         if: inputs.TEST_SCRIPT != ''
