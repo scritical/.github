@@ -30,6 +30,10 @@ on:
         required: true
         description: "Bitwarden machine account access token"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-gcc:
     runs-on: ubuntu-24.04
