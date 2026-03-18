@@ -44,7 +44,7 @@ jobs:
 
       - name: Pull DVC files
         if: inputs.USE_DVC
-        uses: scritical/.github/.github/workflows/dvc_pull.yaml@feature-dvc
+        uses: scritical/.github/.github/actions/dvc_pull@feature-dvc
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
