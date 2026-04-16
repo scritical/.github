@@ -2,7 +2,7 @@ name: DVC pull
 
 description: Creates an Python environment, installs DVC and pulls files from the S3 bucket configured in the repos .dvc/config file.
 
-inputs:
+secrets:
   BW_ACCESS_TOKEN:
     description: Bitwarden machine account access token
     required: true
