@@ -2,11 +2,10 @@ name: DVC pull
 
 description: Creates an Python environment, installs DVC and pulls files from the S3 bucket configured in the repos .dvc/config file.
 
-inputs:
+secrets:
   BW_ACCESS_TOKEN:
     description: Bitwarden machine account access token
     required: true
-
 
 runs:
   using: composite
@@ -14,7 +13,7 @@ runs:
     - name: Get AWS credentials from Bitwarden
       uses: bitwarden/sm-action@v2
       with:
-        access_token: ${{ inputs.BW_ACCESS_TOKEN }}
+        access_token: ${{ secrets.BW_ACCESS_TOKEN }}
         secrets: |
           0ef1b3e4-10c4-4bdd-8aed-b41d016e9518 > AWS_ROLE_ARN
 
