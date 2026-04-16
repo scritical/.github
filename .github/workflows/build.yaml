@@ -25,10 +25,10 @@ on:
         type: boolean
         default: false
         description: "Enables DVC to pull reference data for tests."
-    # secrets:
-    #   BW_ACCESS_TOKEN:
-    #     required: true
-    #     description: "Bitwarden machine account access token"
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
 
 jobs:
   build-gcc:
@@ -44,9 +44,9 @@ jobs:
 
       - name: Pull DVC files
         if: inputs.USE_DVC
-        uses: scritical/.github/.github/actions/dvc_pull@feature-dvc-bitwarden-secret
-        # with:
-        #   BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        uses: scritical/.github/.github/actions/dvc_pull@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
