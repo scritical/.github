@@ -29,9 +29,6 @@ on:
       BW_ACCESS_TOKEN:
         required: true
         description: "Bitwarden machine account access token"
-      AWS_ROLE_ARN:
-        required: false
-        description: "AWS IAM role ARN for DVC S3 access (required when USE_DVC is true)"
 
 jobs:
   build-gcc:
@@ -49,7 +46,7 @@ jobs:
         if: inputs.USE_DVC
         uses: scritical/.github/.github/actions/dvc_pull@main
         with:
-          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
