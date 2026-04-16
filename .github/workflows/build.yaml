@@ -44,7 +44,7 @@ jobs:
 
       - name: Pull DVC files
         if: inputs.USE_DVC
-        uses: scritical/.github/.github/actions/dvc_pull@main
+        uses: scritical/.github/.github/actions/dvc_pull@feature-dvc-bitwarden-secret
         with:
           BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
 
