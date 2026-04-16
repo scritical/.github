@@ -3,17 +3,25 @@ name: DVC pull
 description: Creates an Python environment, installs DVC and pulls files from the S3 bucket configured in the repos .dvc/config file.
 
 inputs:
-  AWS_ROLE_ARN:
-    description: AWS IAM role ARN to assume for S3 access
+  BW_ACCESS_TOKEN:
+    description: Bitwarden machine account access token
     required: true
+
 
 runs:
   using: composite
   steps:
+    - name: Get AWS credentials from Bitwarden
+      uses: bitwarden/sm-action@v2
+      with:
+        access_token: ${{ inputs.BW_ACCESS_TOKEN }}
+        secrets: |
+          0ef1b3e4-10c4-4bdd-8aed-b41d016e9518 > AWS_ROLE_ARN
+
     - name: Configure AWS Credentials for DVC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ inputs.AWS_ROLE_ARN }}
+        role-to-assume: ${{ env.AWS_ROLE_ARN }}
         aws-region: us-east-2
 
     - name: Set up Python
