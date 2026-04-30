@@ -5,6 +5,10 @@ on:
         type: number
         default: 30
         description: "Timeout for the job in minutes"
+      PIP_INSTALL_FLAGS:
+        type: string
+        default: ""
+        description: "Additional flags passed to 'pip install' (e.g. '--no-build-isolation')"
     secrets:
       BW_ACCESS_TOKEN:
         required: true
@@ -31,7 +35,7 @@ jobs:
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
             -e BUILD_REASON="${{ github.event_name }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install . && mypy"
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} . && mypy"
 
       - name: Docker cleanup
         uses: scritical/.github/.github/actions/docker-cleanup@main
