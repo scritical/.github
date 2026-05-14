@@ -7,6 +7,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | Workflow | Description |
 | :------- | :---------- |
 | `build.yaml` | Build and test code in Docker container |
+| `build-docs.yaml` | Build documentation site in Docker container and upload HTML artifact |
 | `tapenade.yaml` | Tapenade automatic differentiation checks |
 | `clang_format.yaml` | C/C++ formatting checks |
 | `fprettify.yaml` | Fortran 90 formatting checks |
@@ -55,6 +56,29 @@ Docker-based build and test workflow using the `scritical/private-dev` image wit
 | `INTEL_CONFIG` | string | `""` | Path to Intel configuration file (from repository root) |
 | `BUILD_SCRIPT` | string | `.github/build.sh` | Path to build script. Empty string skips this step |
 | `TEST_SCRIPT` | string | `.github/test.sh` | Path to test script. Empty string skips this step |
+
+**Required Secrets:**
+| Name | Description |
+| :--- | :---------- |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
+
+If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
+
+---
+
+### build-docs.yaml
+
+Docker-based documentation build workflow using the `scritical/private-dev` image. Runs the repo's own build script to install the current source on top of the image, then invokes `make html` from `DOCS_SRC` and uploads the rendered HTML as an artifact. The contract is tool-agnostic, the docs dir just needs a `Makefile` with an `html` target that emits to `_build/html/`. Sphinx repos already satisfy this via the conventional Sphinx Makefile; mkdocs repos can use a one-line wrapper that calls `mkdocs build --site-dir _build/html`.
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
+| `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
+| `GCC_CONFIG` | string | `""` | Path to GCC configuration file (passed as `CONFIG_FILE` to `BUILD_SCRIPT`) |
+| `BUILD_SCRIPT` | string | `.github/build.sh` | Repo build script that compiles and installs the current source. Mirrors `build.yaml`'s input |
+| `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target |
+| `PRE_BUILD_HOOK` | string | `""` | Optional shell command to run on the host after checkout, before `docker-setup` (e.g., `sed -i ... doc/conf.py`). Runs from the repo root |
+| `ARTIFACT_NAME` | string | n/a | Name for the uploaded HTML artifact (required) |
 
 **Required Secrets:**
 | Name | Description |

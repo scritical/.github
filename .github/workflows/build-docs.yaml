@@ -1,0 +1,98 @@
+# Reusable workflow: build a docs site inside the scritical/private-dev
+# container. The container provides the runtime environment (compilers, MPI,
+# pre-installed sibling deps); this workflow runs the repo's own build script
+# to install the *current* source on top, then invokes `make html` from
+# DOCS_SRC. This contract is tool-agnostic — the docs dir just needs a
+# Makefile with an `html` target that emits to `_build/html/`. Both Sphinx
+# (via the conventional Sphinx Makefile) and mkdocs (via a one-line wrapper
+# Makefile that calls `mkdocs build --site-dir _build/html`) work. Upload
+# artifact + chain to
+# scritical/documentation-server/.github/workflows/publish-api-docs.yml to
+# publish to api-docs.scritical.com.
+
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 30
+        description: "Timeout for the job in minutes"
+      DOCKER_TAG:
+        type: string
+        default: u24-gcc-ompi-latest
+        description: "Tag of scritical/private-dev image to build inside"
+      GCC_CONFIG:
+        type: string
+        default: ""
+        description: "Path to GCC config file (passed as CONFIG_FILE to BUILD_SCRIPT). Mirrors build.yaml's input."
+      BUILD_SCRIPT:
+        type: string
+        default: ".github/build.sh"
+        description: "Repo build script that compiles and installs the current source. Mirrors build.yaml's input."
+      DOCS_SRC:
+        type: string
+        default: doc
+        description: "Docs source directory (relative to repo root). Must contain a Makefile with an `html` target that emits to `_build/html/`. Works for Sphinx (default Makefile) or mkdocs (one-line wrapper)."
+      PRE_BUILD_HOOK:
+        type: string
+        default: ""
+        description: "Optional shell command to run on the host after checkout, before docker-setup (e.g., 'sed -i ... doc/conf.py'). Runs from the repo root."
+      ARTIFACT_NAME:
+        type: string
+        required: true
+        description: "Name for the uploaded HTML artifact"
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    env:
+      DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
+      CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Pre-build hook
+        if: inputs.PRE_BUILD_HOOK != ''
+        run: ${{ inputs.PRE_BUILD_HOOK }}
+
+      - name: Docker setup
+        uses: scritical/.github/.github/actions/docker-setup@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          DOCKER_TAG: ${{ env.DOCKER_TAG }}
+
+      - name: Install current source inside container
+        run: |
+          docker exec \
+            -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+
+      - name: Build docs inside container
+        # Defer to the repo's own `make html`. The Makefile owns tool choice
+        # (Sphinx, mkdocs, ...) and any tool-specific flags. Running from
+        # DOCS_SRC matches Sphinx's source-relative include resolution and
+        # mkdocs's mkdocs.yml lookup. By convention the Makefile must emit
+        # to `_build/html/`.
+        run: |
+          docker exec app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR/${{ inputs.DOCS_SRC }} && pip install -r requirements.txt && make html"
+
+      - name: Copy rendered HTML out of container
+        run: |
+          rm -rf ./_artifact
+          docker cp "app:$DOCKER_WORKING_DIR/${{ inputs.DOCS_SRC }}/_build/html" ./_artifact
+
+      - name: Upload built artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.ARTIFACT_NAME }}
+          path: ./_artifact
+
+      - name: Docker cleanup
+        uses: scritical/.github/.github/actions/docker-cleanup@main

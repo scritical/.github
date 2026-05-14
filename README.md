@@ -12,6 +12,10 @@ This repo stores the following shared repository settings/configurations/templat
     - Docker build
     - Integration testing
     - Uses `docker-setup` and `docker-cleanup`
+  - `build-docs`
+    - Documentation build (Sphinx, mkdocs, ...) via `make html`
+    - Uploads the rendered HTML as an artifact
+    - Uses `docker-setup` and `docker-cleanup`
   - `mypy`
     - Type checking
     - Uses `docker-setup` and `docker-cleanup`
