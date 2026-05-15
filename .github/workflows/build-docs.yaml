@@ -2,18 +2,17 @@
 # container, then publish it to api-docs.scritical.com.
 #
 # The container provides the runtime environment (compilers, MPI, pre-installed
-# sibling deps); for repos with compiled extensions this workflow runs the
-# repo's own build script to install the *current* source on top
-# (set BUILD_SCRIPT: "" to skip for pure-Python repos), then invokes
-# `make html` from DOCS_SRC. This contract is tool-agnostic — the docs dir
-# just needs a Makefile with an `html` target that emits to `_build/html/`.
-# Both Sphinx (via the conventional Sphinx Makefile) and mkdocs (via a
-# one-line wrapper Makefile that calls `mkdocs build --site-dir _build/html`)
-# work.
+# sibling deps). This workflow does a lightweight `pip install` of the current
+# source for metadata registration (no compile, no dep resolution by default),
+# then invokes `make html` from DOCS_SRC. The contract is tool-agnostic, the
+# docs dir just needs a Makefile with an `html` target that emits to
+# `_build/html/`. Both Sphinx (via the conventional Sphinx Makefile) and mkdocs
+# (via a one-line wrapper Makefile that calls `mkdocs build --site-dir
+# _build/html`) work.
 #
 # The rendered HTML is then handed to
 # scritical/documentation-server/.github/workflows/publish-api-docs.yml,
-# which syncs the artifact to the api-docs S3 bucket.
+# which syncs the artifact to the api-docs S3 bucket and publishes to api-docs.scritical.com.
 
 on:
   workflow_call:
@@ -26,26 +25,14 @@ on:
         type: string
         default: u24-gcc-ompi-latest
         description: "Tag of scritical/private-dev image to build inside"
-      BUILD_SCRIPT:
-        type: string
-        default: ""
-        description: "[optional] Repo build script that compiles and installs the current source (heavy-compile path for Fortran/C-extension repos). Mirrors build.yaml's input. When set, the default `pip install` step is skipped, since BUILD_SCRIPT is expected to install the package itself."
-      GCC_CONFIG:
-        type: string
-        default: ""
-        description: "Path to GCC config file (passed as CONFIG_FILE to BUILD_SCRIPT). Mirrors build.yaml's input."
       PIP_INSTALL_FLAGS:
         type: string
         default: "--no-build-isolation --no-deps"
-        description: "Flags passed to `pip install <FLAGS> .` from the repo root. Default is a lightweight metadata-only install that doesn't trigger a full compile and doesn't pull runtime deps (those come from the private-dev container's pre-installed env). This step is skipped automatically when BUILD_SCRIPT is set, since BUILD_SCRIPT installs the package itself."
+        description: "Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package)."
       DOCS_SRC:
         type: string
         default: doc
         description: "Docs source directory (relative to repo root). Must contain a Makefile with an `html` target that emits to `_build/html/`."
-      PRE_BUILD_HOOK:
-        type: string
-        default: ""
-        description: "Optional shell command to run on the host after checkout, before docker-setup (e.g., 'sed -i ... doc/conf.py'). Runs from the repo root."
       ARTIFACT_NAME:
         type: string
         required: true
@@ -65,15 +52,10 @@ jobs:
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
       DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
-      CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Pre-build hook
-        if: inputs.PRE_BUILD_HOOK != ''
-        run: ${{ inputs.PRE_BUILD_HOOK }}
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
@@ -81,15 +63,8 @@ jobs:
           BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
-      - name: Install current source inside container
-        if: inputs.BUILD_SCRIPT != ''
-        run: |
-          docker exec \
-            -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
-
       - name: Pip install current source
-        if: inputs.BUILD_SCRIPT == ''
+        if: inputs.PIP_INSTALL_FLAGS != ''
         run: |
           docker exec app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} ."
 

@@ -74,10 +74,8 @@ Docker-based documentation build and publish workflow using the `scritical/priva
 | :--- | :--- | :------ | :---------- |
 | `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
 | `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
-| `BUILD_SCRIPT` | string | `""` | Repo build script that compiles and installs the current source. Empty string skips this step. Mirrors `build.yaml`'s input |
-| `GCC_CONFIG` | string | `""` | Path to GCC configuration file (passed as `CONFIG_FILE` to `BUILD_SCRIPT`) |
-| `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target |
-| `PRE_BUILD_HOOK` | string | `""` | Optional shell command to run on the host after checkout, before `docker-setup` (e.g., `sed -i ... doc/conf.py`). Runs from the repo root |
+| `PIP_INSTALL_FLAGS` | string | `--no-build-isolation --no-deps` | Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package) |
+| `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target that emits to `_build/html/` |
 | `ARTIFACT_NAME` | string | n/a | Name for the uploaded HTML artifact (passed through to the publish workflow). Required |
 | `PROJECT_ID` | string | n/a | URL slug under `https://api-docs.scritical.com/<PROJECT_ID>/`. Must match `^[a-z0-9-]+$` (no slashes, no uppercase, no underscores). Required |
 
