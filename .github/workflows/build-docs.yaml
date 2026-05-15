@@ -29,11 +29,15 @@ on:
       BUILD_SCRIPT:
         type: string
         default: ""
-        description: "[optional] Repo build script that compiles and installs the current source. Empty strings skip the build step. Mirrors build.yaml's input"
+        description: "[optional] Repo build script that compiles and installs the current source (heavy-compile path for Fortran/C-extension repos). Mirrors build.yaml's input. When set, the default `pip install` step is skipped, since BUILD_SCRIPT is expected to install the package itself."
       GCC_CONFIG:
         type: string
         default: ""
         description: "Path to GCC config file (passed as CONFIG_FILE to BUILD_SCRIPT). Mirrors build.yaml's input."
+      PIP_INSTALL_FLAGS:
+        type: string
+        default: "--no-build-isolation --no-deps"
+        description: "Flags passed to `pip install <FLAGS> .` from the repo root. Default is a lightweight metadata-only install that doesn't trigger a full compile and doesn't pull runtime deps (those come from the private-dev container's pre-installed env). This step is skipped automatically when BUILD_SCRIPT is set, since BUILD_SCRIPT installs the package itself."
       DOCS_SRC:
         type: string
         default: doc
@@ -83,6 +87,11 @@ jobs:
           docker exec \
             -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+
+      - name: Pip install current source
+        if: inputs.BUILD_SCRIPT == ''
+        run: |
+          docker exec app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} ."
 
       - name: Build docs inside container
         # Defer to the repo's own `make html`. The Makefile owns tool choice
