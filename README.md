@@ -14,7 +14,7 @@ This repo stores the following shared repository settings/configurations/templat
     - Uses `docker-setup` and `docker-cleanup`
   - `build-docs`
     - Documentation build (Sphinx, mkdocs, ...) via `make html`
-    - Uploads the rendered HTML as an artifact
+    - Publishes the rendered HTML to `api-docs.scritical.com` via `scritical/documentation-server`
     - Uses `docker-setup` and `docker-cleanup`
   - `mypy`
     - Type checking

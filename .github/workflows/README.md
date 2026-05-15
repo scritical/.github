@@ -7,7 +7,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | Workflow | Description |
 | :------- | :---------- |
 | `build.yaml` | Build and test code in Docker container |
-| `build-docs.yaml` | Build documentation site in Docker container and upload HTML artifact |
+| `build-docs.yaml` | Build documentation site in Docker container and publish it to `api-docs.scritical.com` |
 | `tapenade.yaml` | Tapenade automatic differentiation checks |
 | `clang_format.yaml` | C/C++ formatting checks |
 | `fprettify.yaml` | Fortran 90 formatting checks |
@@ -68,17 +68,18 @@ If these secrets are configured at the organization level, callers can use `secr
 
 ### build-docs.yaml
 
-Docker-based documentation build workflow using the `scritical/private-dev` image. Runs the repo's own build script to install the current source on top of the image, then invokes `make html` from `DOCS_SRC` and uploads the rendered HTML as an artifact. The contract is tool-agnostic, the docs dir just needs a `Makefile` with an `html` target that emits to `_build/html/`. Sphinx repos already satisfy this via the conventional Sphinx Makefile; mkdocs repos can use a one-line wrapper that calls `mkdocs build --site-dir _build/html`.
+Docker-based documentation build and publish workflow using the `scritical/private-dev` image.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
 | `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
 | `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
+| `BUILD_SCRIPT` | string | `""` | Repo build script that compiles and installs the current source. Empty string skips this step. Mirrors `build.yaml`'s input |
 | `GCC_CONFIG` | string | `""` | Path to GCC configuration file (passed as `CONFIG_FILE` to `BUILD_SCRIPT`) |
-| `BUILD_SCRIPT` | string | `.github/build.sh` | Repo build script that compiles and installs the current source. Mirrors `build.yaml`'s input |
 | `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target |
 | `PRE_BUILD_HOOK` | string | `""` | Optional shell command to run on the host after checkout, before `docker-setup` (e.g., `sed -i ... doc/conf.py`). Runs from the repo root |
-| `ARTIFACT_NAME` | string | n/a | Name for the uploaded HTML artifact (required) |
+| `ARTIFACT_NAME` | string | n/a | Name for the uploaded HTML artifact (passed through to the publish workflow). Required |
+| `PROJECT_ID` | string | n/a | URL slug under `https://api-docs.scritical.com/<PROJECT_ID>/`. Must match `^[a-z0-9-]+$` (no slashes, no uppercase, no underscores). Required |
 
 **Required Secrets:**
 | Name | Description |
