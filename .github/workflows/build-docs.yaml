@@ -21,14 +21,14 @@ on:
         type: string
         default: u24-gcc-ompi-latest
         description: "Tag of scritical/private-dev image to build inside"
+      BUILD_SCRIPT:
+        type: string
+        default: ""
+        description: "[optional] Repo build script that compiles and installs the current source. Empty strings skip the build step. Mirrors build.yaml's input"
       GCC_CONFIG:
         type: string
         default: ""
         description: "Path to GCC config file (passed as CONFIG_FILE to BUILD_SCRIPT). Mirrors build.yaml's input."
-      BUILD_SCRIPT:
-        type: string
-        default: ".github/build.sh"
-        description: "Repo build script that compiles and installs the current source. Mirrors build.yaml's input."
       DOCS_SRC:
         type: string
         default: doc
@@ -69,6 +69,7 @@ jobs:
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: Install current source inside container
+        if: inputs.BUILD_SCRIPT != ''
         run: |
           docker exec \
             -e CONFIG_FILE="${{ env.CONFIG_FILE }}" \
