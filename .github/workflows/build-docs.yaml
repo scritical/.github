@@ -1,0 +1,101 @@
+# Reusable workflow: build a docs site inside the scritical/private-dev
+# container, then publish it to api-docs.scritical.com.
+#
+# The container provides the runtime environment (compilers, MPI, pre-installed
+# sibling deps). This workflow does a lightweight `pip install` of the current
+# source for metadata registration (no compile, no dep resolution by default),
+# then invokes `make html` from DOCS_SRC. The contract is tool-agnostic, the
+# docs dir just needs a Makefile with an `html` target that emits to
+# `_build/html/`. Both Sphinx (via the conventional Sphinx Makefile) and mkdocs
+# (via a one-line wrapper Makefile that calls `mkdocs build --site-dir
+# _build/html`) work.
+#
+# The rendered HTML is then handed to
+# scritical/documentation-server/.github/workflows/publish-api-docs.yml,
+# which syncs the artifact to the api-docs S3 bucket and publishes to api-docs.scritical.com.
+
+on:
+  workflow_call:
+    inputs:
+      TIMEOUT:
+        type: number
+        default: 30
+        description: "Timeout for the job in minutes"
+      DOCKER_TAG:
+        type: string
+        default: u24-gcc-ompi-latest
+        description: "Tag of scritical/private-dev image to build inside"
+      PIP_INSTALL_FLAGS:
+        type: string
+        default: "--no-build-isolation --no-deps"
+        description: "Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package)."
+      DOCS_SRC:
+        type: string
+        default: doc
+        description: "Docs source directory (relative to repo root). Must contain a Makefile with an `html` target that emits to `_build/html/`."
+      ARTIFACT_NAME:
+        type: string
+        required: true
+        description: "Name for the uploaded HTML artifact (passed through to the downstream publish workflow)"
+      PROJECT_ID:
+        type: string
+        required: true
+        description: "URL slug under https://api-docs.scritical.com/<PROJECT_ID>/. Must match ^[a-z0-9-]+$ — no slashes, no uppercase, no underscores. Forwarded to documentation-server's publish workflow."
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    env:
+      DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Docker setup
+        uses: scritical/.github/.github/actions/docker-setup@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          DOCKER_TAG: ${{ env.DOCKER_TAG }}
+
+      - name: Pip install current source
+        if: inputs.PIP_INSTALL_FLAGS != ''
+        run: |
+          docker exec app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} ."
+
+      - name: Build docs inside container
+        # Defer to the repo's own `make html`. The Makefile owns tool choice
+        # (Sphinx, mkdocs, ...) and any tool-specific flags. Running from
+        # DOCS_SRC matches Sphinx's source-relative include resolution and
+        # mkdocs's mkdocs.yml lookup. By convention the Makefile must emit
+        # to `_build/html/`.
+        run: |
+          docker exec app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR/${{ inputs.DOCS_SRC }} && pip install -r requirements.txt && make html"
+
+      - name: Copy rendered HTML out of container
+        run: |
+          rm -rf ./_artifact
+          docker cp "app:$DOCKER_WORKING_DIR/${{ inputs.DOCS_SRC }}/_build/html" ./_artifact
+
+      - name: Upload built artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.ARTIFACT_NAME }}
+          path: ./_artifact
+
+      - name: Docker cleanup
+        uses: scritical/.github/.github/actions/docker-cleanup@main
+
+  publish-docs:
+    needs: build-docs
+    uses: scritical/documentation-server/.github/workflows/publish-api-docs.yml@main
+    with:
+      project_id: ${{ inputs.PROJECT_ID }}
+      artifact_name: ${{ inputs.ARTIFACT_NAME }}
+    secrets:
+      BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
