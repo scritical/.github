@@ -68,16 +68,20 @@ If these secrets are configured at the organization level, callers can use `secr
 
 ### build-docs.yaml
 
-Docker-based documentation build and publish workflow using the `scritical/private-dev` image.
+Docker-based documentation build and (optional) publish workflow using the `scritical/private-dev` image.
+
+Single job: builds the docs site inside the container, then — if `PUBLISH=true` — calls the `publish-to-api-docs` composite action from `scritical/documentation-server` to publish the rendered HTML.
+
+Gating lives in the caller: pass a boolean expression for `PUBLISH` (or omit it for build-only).
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
+| `PROJECT_ID` | string | n/a | URL slug under `https://api-docs.scritical.com/<PROJECT_ID>/`. **Required when `PUBLISH=true`.** Must match `^[a-z0-9-]+$` (no slashes, no uppercase, no underscores) |
+| `PUBLISH` | boolean | `false` | Whether to publish after building. Typically passed as an expression. |
 | `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
 | `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
 | `PIP_INSTALL_FLAGS` | string | `--no-build-isolation --no-deps` | Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package) |
 | `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target that emits to `_build/html/` |
-| `ARTIFACT_NAME` | string | n/a | Name for the uploaded HTML artifact (passed through to the publish workflow). Required |
-| `PROJECT_ID` | string | n/a | URL slug under `https://api-docs.scritical.com/<PROJECT_ID>/`. Must match `^[a-z0-9-]+$` (no slashes, no uppercase, no underscores). Required |
 
 **Required Secrets:**
 | Name | Description |
