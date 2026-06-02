@@ -34,6 +34,9 @@ jobs:
   build-gcc:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    permissions:
+      contents: read
+      packages: read
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
@@ -51,7 +54,6 @@ jobs:
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
-          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: Build
@@ -76,6 +78,9 @@ jobs:
   build-intel:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    permissions:
+      contents: read
+      packages: read
     env:
       DOCKER_TAG: u24-intel-impi-latest
       CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}

@@ -45,6 +45,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: read
     env:
       DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
 
@@ -55,7 +56,6 @@ jobs:
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
-          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: Pip install current source

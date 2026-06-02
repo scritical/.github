@@ -28,12 +28,13 @@ Shared composite actions used by workflows and repository CI files.
 
 ### docker-setup
 
+Logs in to `ghcr.io` using the calling workflow's `GITHUB_TOKEN` and starts the `ghcr.io/scritical/private-dev` container. The caller's job must grant `packages: read` permission.
+
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
 | `SCRITICAL_HOMEDIR` | string | `/home/scriticaluser` | Base home directory for container paths |
 | `BASHRC` | string | `/home/scriticaluser/.bashrc_scritical` | Bashrc for container environment |
 | `DOCKER_TAG` | string | n/a | Docker image tag to use |
-| `BW_ACCESS_TOKEN` | string | n/a | Bitwarden access token |
 
 ### docker-cleanup
 
@@ -47,7 +48,7 @@ Configuration inheritance/overrides are documented in each workflow section belo
 
 ### build.yaml
 
-Docker-based build and test workflow using the `scritical/private-dev` image with GCC and Intel compilers.
+Docker-based build and test workflow using the `ghcr.io/scritical/private-dev` image with GCC and Intel compilers.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
@@ -68,7 +69,7 @@ If these secrets are configured at the organization level, callers can use `secr
 
 ### build-docs.yaml
 
-Docker-based documentation build and (optional) publish workflow using the `scritical/private-dev` image.
+Docker-based documentation build and (optional) publish workflow using the `ghcr.io/scritical/private-dev` image.
 
 Single job: builds the docs site inside the container, then — if `PUBLISH=true` — calls the `publish-to-api-docs` composite action from `scritical/documentation-server` to publish the rendered HTML.
 
@@ -79,7 +80,7 @@ Gating lives in the caller: pass a boolean expression for `PUBLISH` (or omit it 
 | `PROJECT_ID` | string | n/a | URL slug under `https://api-docs.scritical.com/<PROJECT_ID>/`. **Required when `PUBLISH=true`.** Must match `^[a-z0-9-]+$` (no slashes, no uppercase, no underscores) |
 | `PUBLISH` | boolean | `false` | Whether to publish after building. Typically passed as an expression. |
 | `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
-| `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
+| `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `ghcr.io/scritical/private-dev` image to build inside |
 | `PIP_INSTALL_FLAGS` | string | `--no-build-isolation --no-deps` | Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package) |
 | `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target that emits to `_build/html/` |
 
@@ -122,12 +123,7 @@ Runs MyPy type checking in the GCC OpenMPI Docker image.
 | :--- | :--- | :------ | :---------- |
 | `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
 
-**Required Secrets:**
-| Name | Description |
-| :--- | :---------- |
-| `BW_ACCESS_TOKEN` | Bitwarden access token |
-
-If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
+No secrets required. The job uses the workflow's `GITHUB_TOKEN` to authenticate to GHCR.
 
 ---
 

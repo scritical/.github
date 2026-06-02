@@ -14,9 +14,6 @@ inputs:
   DOCKER_TAG:
     description: Docker image tag to use
     required: true
-  BW_ACCESS_TOKEN:
-    description: Bitwarden machine account access token
-    required: true
 
 runs:
   using: composite
@@ -32,27 +29,19 @@ runs:
         echo "DOCKER_WORKING_DIR=$scritical_homedir/repos/$repo_name" >> "$GITHUB_ENV"
         echo "DOCKER_MOUNT_DIR=$scritical_homedir/mount/$repo_name" >> "$GITHUB_ENV"
 
-    - name: Get Docker credentials from Bitwarden
-      uses: bitwarden/sm-action@v2
-      with:
-        access_token: ${{ inputs.BW_ACCESS_TOKEN }}
-        secrets: |
-          71828b4d-6441-4e7d-b7f5-b3f8002289a5 > DOCKER_USERNAME
-          e172281c-7428-412c-a86c-b3f7010f81bd > DOCKER_OAT
-
-    - name: Login to Docker Hub
+    - name: Login to GHCR
       uses: docker/login-action@v4
       with:
-        username: ${{ env.DOCKER_USERNAME }}
-        password: ${{ env.DOCKER_OAT }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
 
     - name: Start Docker container
       shell: bash
       run: |
         docker run -t -d --name app \
           --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
-          scritical/private-dev:${{ inputs.DOCKER_TAG }} /bin/bash
+          ghcr.io/scritical/private-dev:${{ inputs.DOCKER_TAG }} /bin/bash
 
         # Copy repo to working directory
         docker exec app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && mkdir -p $DOCKER_WORKING_DIR && cp -a $DOCKER_MOUNT_DIR/. $DOCKER_WORKING_DIR/"
-
