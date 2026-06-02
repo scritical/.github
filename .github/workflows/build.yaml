@@ -32,7 +32,7 @@ on:
 
 jobs:
   build-gcc:
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
@@ -74,7 +74,7 @@ jobs:
 
 
   build-intel:
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
       DOCKER_TAG: u24-intel-impi-latest
