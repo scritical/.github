@@ -25,6 +25,14 @@ on:
         type: boolean
         default: false
         description: "Enables DVC to pull reference data for tests."
+      GCC_DOCKER_TAG:
+        type: string
+        default: u24-gcc-ompi-latest
+        description: "GHCR tag for the GCC/OpenMPI private-dev image"
+      INTEL_DOCKER_TAG:
+        type: string
+        default: u24-intel-impi-latest
+        description: "GHCR tag for the Intel/IMPI private-dev image"
     secrets:
       BW_ACCESS_TOKEN:
         required: true
@@ -38,7 +46,7 @@ jobs:
       contents: read
       packages: read
     env:
-      DOCKER_TAG: u24-gcc-ompi-latest
+      DOCKER_TAG: ${{ inputs.GCC_DOCKER_TAG }}
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
 
     steps: &build_steps
@@ -82,7 +90,7 @@ jobs:
       contents: read
       packages: read
     env:
-      DOCKER_TAG: u24-intel-impi-latest
+      DOCKER_TAG: ${{ inputs.INTEL_DOCKER_TAG }}
       CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
     steps: *build_steps
           

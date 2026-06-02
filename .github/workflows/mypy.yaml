@@ -9,6 +9,10 @@ on:
         type: string
         default: ""
         description: "Additional flags passed to 'pip install' (e.g. '--no-build-isolation')"
+      DOCKER_TAG:
+        type: string
+        default: u24-gcc-ompi-latest
+        description: "GHCR tag for the private-dev image"
 
 jobs:
   mypy:
@@ -18,7 +22,7 @@ jobs:
       contents: read
       packages: read
     env:
-      DOCKER_TAG: u24-gcc-ompi-latest
+      DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
