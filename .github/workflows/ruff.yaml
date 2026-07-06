@@ -19,12 +19,12 @@ jobs:
         working-directory: project
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: project
       
       - name: Checkout org-wide configs
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: scritical/.github
           path: .org-dotgithub

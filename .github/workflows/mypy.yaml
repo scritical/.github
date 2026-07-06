@@ -22,7 +22,7 @@ jobs:
       DOCKER_TAG: u24-gcc-ompi-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
