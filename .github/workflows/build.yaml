@@ -15,36 +15,43 @@ on:
         description: "Path to Intel configuration file"
       BUILD_SCRIPT:
         type: string
-        default: ".github/build_real.sh"
+        default: ".github/build.sh"
         description: "Path to build script"
       TEST_SCRIPT:
         type: string
-        default: ".github/test_real.sh"
+        default: ".github/test.sh"
         description: "Path to test script"
+      USE_DVC:
+        type: boolean
+        default: false
+        description: "Enables DVC to pull reference data for tests."
     secrets:
-      DOCKER_USER:
+      BW_ACCESS_TOKEN:
         required: true
-        description: "Docker registry username"
-      DOCKER_OAT:
-        required: true
-        description: "Docker registry Organization Access Token"
+        description: "Bitwarden machine account access token"
 
 jobs:
   build-gcc:
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
+
     steps: &build_steps
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+
+      - name: Pull DVC files
+        if: inputs.USE_DVC
+        uses: scritical/.github/.github/actions/dvc_pull@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: Build
@@ -67,7 +74,7 @@ jobs:
 
 
   build-intel:
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
     timeout-minutes: ${{ inputs.TIMEOUT }}
     env:
       DOCKER_TAG: u24-intel-impi-latest

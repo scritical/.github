@@ -1,0 +1,53 @@
+name: Extract version bump
+
+on:
+  workflow_call:
+    outputs:
+      version_bump:
+        description: "Either: major, minor or patch"
+        value: ${{ jobs.extract_version_bump.outputs.version_bump }}
+
+jobs:
+  extract_version_bump:
+    runs-on: ubuntu-latest
+
+    outputs:
+      version_bump: ${{ steps.parse.outputs.version_bump }}
+
+    steps:
+      - name: Parse PR title for version bump
+        id: parse
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $TITLE"
+
+          shopt -s nocasematch
+
+          major=0
+          minor=0
+          patch=0
+
+          [[ "$TITLE" =~ "[major]" ]] && major=1
+          [[ "$TITLE" =~ "[minor]" ]] && minor=1
+          [[ "$TITLE" =~ "[patch]" ]] && patch=1
+
+          count=$((major + minor + patch))
+
+          if [[ $count -gt 1 ]]; then
+            echo "Error: PR title contains more than one version bump keyword ([major], [minor], [patch])."
+            exit 1
+          fi
+
+          if [[ $major -eq 1 ]]; then
+            bump="major"
+          elif [[ $minor -eq 1 ]]; then
+            bump="minor"
+          elif [[ $patch -eq 1 ]]; then
+            bump="patch"
+          else
+            echo "Error: PR title does not contain any version bump keyword ([major], [minor], [patch])."
+            exit 1
+          fi
+
+          echo "Detected bump: $bump"
+          echo "version_bump=$bump" >> "$GITHUB_OUTPUT"

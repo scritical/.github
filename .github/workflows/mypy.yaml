@@ -5,13 +5,14 @@ on:
         type: number
         default: 30
         description: "Timeout for the job in minutes"
+      PIP_INSTALL_FLAGS:
+        type: string
+        default: ""
+        description: "Additional flags passed to 'pip install' (e.g. '--no-build-isolation')"
     secrets:
-      DOCKER_USER:
+      BW_ACCESS_TOKEN:
         required: true
-        description: "Docker registry username"
-      DOCKER_OAT:
-        required: true
-        description: "Docker registry Organization Access Token"
+        description: "Bitwarden machine account access token"
 
 jobs:
   mypy:
@@ -21,13 +22,12 @@ jobs:
       DOCKER_TAG: u24-gcc-ompi-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Docker setup
         uses: scritical/.github/.github/actions/docker-setup@main
         with:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_OAT: ${{ secrets.DOCKER_OAT }}
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: MyPy type checking
@@ -35,7 +35,7 @@ jobs:
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
             -e BUILD_REASON="${{ github.event_name }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && mypy ."
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} . && mypy"
 
       - name: Docker cleanup
         uses: scritical/.github/.github/actions/docker-cleanup@main

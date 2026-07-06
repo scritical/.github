@@ -27,7 +27,7 @@ ignore = [
     "D404", # First word of the docstring should not be "This" (Probably a good rule to follow going forward but it occurs in so many places in our code and it's not a big enough issue to warrant fixing)
 ]
 
-select = ["B", "D", "E", "F", "W"]
+select = ["B", "D", "E", "F", "I", "W"]
 
 [lint.pydocstyle]
 convention = "numpy"
@@ -37,6 +37,13 @@ max-complexity = 10
 
 [lint.isort]
 force-sort-within-sections = true
+
+[lint.isort.import-heading]
+future = "Future modules"
+standard-library = "Standard Python modules"
+third-party = "External modules"
+first-party = "First party modules"
+local-folder = "Local modules"
 
 [format]
 quote-style = "double"

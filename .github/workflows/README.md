@@ -7,6 +7,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | Workflow | Description |
 | :------- | :---------- |
 | `build.yaml` | Build and test code in Docker container |
+| `build-docs.yaml` | Build documentation site in Docker container and publish it to `api-docs.scritical.com` |
 | `tapenade.yaml` | Tapenade automatic differentiation checks |
 | `clang_format.yaml` | C/C++ formatting checks |
 | `fprettify.yaml` | Fortran 90 formatting checks |
@@ -31,9 +32,8 @@ Shared composite actions used by workflows and repository CI files.
 | :--- | :--- | :------ | :---------- |
 | `SCRITICAL_HOMEDIR` | string | `/home/scriticaluser` | Base home directory for container paths |
 | `BASHRC` | string | `/home/scriticaluser/.bashrc_scritical` | Bashrc for container environment |
-| `DOCKER_USER` | string | n/a | Docker registry username |
-| `DOCKER_OAT` | string | n/a | Docker registry Organization Access Token |
 | `DOCKER_TAG` | string | n/a | Docker image tag to use |
+| `BW_ACCESS_TOKEN` | string | n/a | Bitwarden access token |
 
 ### docker-cleanup
 
@@ -47,22 +47,46 @@ Configuration inheritance/overrides are documented in each workflow section belo
 
 ### build.yaml
 
-Docker-based build and test workflow using the `scritical/private-dev` image.
-Runs GCC and/or Intel jobs based on `GCC` and `INTEL` input flags.
+Docker-based build and test workflow using the `scritical/private-dev` image with GCC and Intel compilers.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
 | `TIMEOUT` | number | `120` | Runtime allowed for the job, in minutes |
 | `GCC_CONFIG` | string | `""` | Path to GCC configuration file (from repository root) |
 | `INTEL_CONFIG` | string | `""` | Path to Intel configuration file (from repository root) |
-| `BUILD_SCRIPT` | string | `.github/build_real.sh` | Path to build script. Empty string skips this step |
-| `TEST_SCRIPT` | string | `.github/test_real.sh` | Path to test script. Empty string skips this step |
+| `BUILD_SCRIPT` | string | `.github/build.sh` | Path to build script. Empty string skips this step |
+| `TEST_SCRIPT` | string | `.github/test.sh` | Path to test script. Empty string skips this step |
 
 **Required Secrets:**
 | Name | Description |
 | :--- | :---------- |
-| `DOCKER_USER` | Docker registry username |
-| `DOCKER_OAT` | Docker registry Organization Access Token |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
+
+If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
+
+---
+
+### build-docs.yaml
+
+Docker-based documentation build and (optional) publish workflow using the `scritical/private-dev` image.
+
+Single job: builds the docs site inside the container, then — if `PUBLISH=true` — calls the `publish-to-api-docs` composite action from `scritical/documentation-server` to publish the rendered HTML.
+
+Gating lives in the caller: pass a boolean expression for `PUBLISH` (or omit it for build-only).
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `PROJECT_ID` | string | n/a | URL slug under `https://api-docs.scritical.com/<PROJECT_ID>/`. **Required when `PUBLISH=true`.** Must match `^[a-z0-9-]+$` (no slashes, no uppercase, no underscores) |
+| `PUBLISH` | boolean | `false` | Whether to publish after building. Typically passed as an expression. |
+| `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
+| `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
+| `PIP_INSTALL_FLAGS` | string | `--no-build-isolation --no-deps` | Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package) |
+| `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target that emits to `_build/html/` |
+
+**Required Secrets:**
+| Name | Description |
+| :--- | :---------- |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
 
 If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
 
@@ -75,6 +99,7 @@ The workflow checks out the org-wide Ruff configuration from `scritical/.github`
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
+| `TIMEOUT` | number | `20` | Runtime allowed for the job, in minutes |
 | `MCCABE` | boolean | `false` | Enable McCabe complexity check (pass/fail, max complexity = 10) |
 | `ISORT` | boolean | `false` | Enable import sorting check (pass/fail) |
 
@@ -100,8 +125,7 @@ Runs MyPy type checking in the GCC OpenMPI Docker image.
 **Required Secrets:**
 | Name | Description |
 | :--- | :---------- |
-| `DOCKER_USER` | Docker registry username |
-| `DOCKER_OAT` | Docker registry Organization Access Token |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
 
 If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
 
@@ -151,7 +175,7 @@ Fortran 90 code formatting checks using fprettify.
 Enforces branch naming conventions for pull requests:
 
 - For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
-- For PRs targeting `client-*`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
+- For PRs targeting `client-*`, source branches must be `main` or start with `feature-`, `bugfix-`, or `hotfix-`.
 
 ## Setting Up Workflows
 
@@ -187,7 +211,7 @@ jobs:
 
 ### Step 2: Write Build Script
 
-Create `.github/build_real.sh` in your repository:
+Create `.github/build.sh` in your repository:
 
 ```bash
 #!/bin/bash
@@ -199,7 +223,7 @@ pip install .
 
 ### Step 3: Write Test Script
 
-Create `.github/test_real.sh` in your repository:
+Create `.github/test.sh` in your repository:
 
 ```bash
 #!/bin/bash
@@ -210,9 +234,8 @@ testflo -v . -n 1
 
 ### Step 4: Add Secrets
 
-In your orginaization settings, add the required secrets:
-- `DOCKER_USER` - Docker organization name
-- `DOCKER_OAT` - Docker Organization Access Token for pulling private images
+In your organization settings, add the required secrets:
+- `BW_ACCESS_TOKEN` - Bitwarden access token
 
 ---
 
