@@ -13,6 +13,10 @@ on:
         type: string
         default: ""
         description: "Path to Intel configuration file"
+      LLVM_CONFIG:
+        type: string
+        default: ""
+        description: "Path to LLVM (clang/flang) configuration file. Read by docker-sr image builds; not yet consumed by any job here."
       BUILD_SCRIPT:
         type: string
         default: ".github/build.sh"
