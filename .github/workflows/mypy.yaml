@@ -9,25 +9,27 @@ on:
         type: string
         default: ""
         description: "Additional flags passed to 'pip install' (e.g. '--no-build-isolation')"
-    secrets:
-      BW_ACCESS_TOKEN:
-        required: true
-        description: "Bitwarden machine account access token"
+      DOCKER_TAG:
+        type: string
+        default: u24-gcc-ompi-latest
+        description: "GHCR tag for the private-dev image"
 
 jobs:
   mypy:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    permissions:
+      contents: read
+      packages: read
     env:
-      DOCKER_TAG: u24-gcc-ompi-latest
+      DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Docker setup
-        uses: scritical/.github/.github/actions/docker-setup@main
+        uses: scritical/.github/.github/actions/docker-setup@feature-ghcr_io
         with:
-          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
       - name: MyPy type checking
