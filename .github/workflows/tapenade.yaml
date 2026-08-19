@@ -22,7 +22,8 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 8
+          # Matches the JRE in the scritical docker images
+          java-version: 21
 
       - name: Install and run Tapenade
         run: |
