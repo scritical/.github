@@ -25,6 +25,10 @@ on:
         type: string
         default: u24-gcc-ompi-latest
         description: "Tag of scritical/private-dev image to build inside"
+      BUILD_SCRIPT:
+        type: string
+        default: ""
+        description: "Path to a build script run inside the container before the docs build. Use for compiled packages whose autodoc needs extension modules built from source. Runs before PIP_INSTALL_FLAGS; leave empty to skip."
       PIP_INSTALL_FLAGS:
         type: string
         default: "--no-build-isolation --no-deps"
@@ -57,6 +61,11 @@ jobs:
         with:
           BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
+
+      - name: Build inside container
+        if: inputs.BUILD_SCRIPT != ''
+        run: |
+          docker exec app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
 
       - name: Pip install current source
         if: inputs.PIP_INSTALL_FLAGS != ''
