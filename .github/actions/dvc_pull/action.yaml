@@ -39,15 +39,7 @@ runs:
       shell: bash
       run: |
         pip install --upgrade pip
-        # pygtrie>=2.6.0 (released after this dvc pin) removed the internal
-        # Trie._NONE_STEP attribute dvc[s3]==3.66.1 still depends on, so an
-        # unpinned install breaks `dvc pull` with:
-        #   ERROR: unexpected error - type object 'Trie' has no attribute '_NONE_STEP'
-        # Reproduced with a fresh `pip install dvc[s3]==3.66.1` (resolves
-        # pygtrie 2.6.0) and confirmed dvc 3.67.1 hits the same error, so
-        # this isn't a version bump away -- pin pygtrie until dvc's own
-        # constraints catch up. Pinned in the same install as dvc[s3] so
-        # the resolver picks a mutually-compatible set from the start.
+        # pygtrie>=2.6.0 breaks dvc 3.66.1; drop once dvc constrains it itself or upgrades to match.
         pip install 'dvc[s3]==3.66.1' 'pygtrie<2.6.0'
 
     - name: Remove 'profile' section from dvc config file
