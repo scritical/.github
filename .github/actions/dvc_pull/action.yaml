@@ -39,7 +39,8 @@ runs:
       shell: bash
       run: |
         pip install --upgrade pip
-        pip install dvc[s3]==3.66.1
+        # pygtrie>=2.6.0 breaks dvc 3.66.1; drop once dvc constrains it itself or upgrades to match.
+        pip install 'dvc[s3]==3.66.1' 'pygtrie<2.6.0'
 
     - name: Remove 'profile' section from dvc config file
       shell: bash
