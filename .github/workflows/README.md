@@ -80,6 +80,7 @@ Gating lives in the caller: pass a boolean expression for `PUBLISH` (or omit it 
 | `PUBLISH` | boolean | `false` | Whether to publish after building. Typically passed as an expression. |
 | `TIMEOUT` | number | `30` | Runtime allowed for the job, in minutes |
 | `DOCKER_TAG` | string | `u24-gcc-ompi-latest` | Tag of `scritical/private-dev` image to build inside |
+| `BUILD_SCRIPT` | string | `""` | Path to a build script run inside the container before the docs build. Use for compiled packages whose autodoc needs extension modules built from source. Runs before `PIP_INSTALL_FLAGS`; leave empty to skip |
 | `PIP_INSTALL_FLAGS` | string | `--no-build-isolation --no-deps` | Flags passed to `pip install <FLAGS> .` from the repo root. Set to empty string to skip the install step entirely (for pure-docs repos with no installable package) |
 | `DOCS_SRC` | string | `doc` | Docs source directory (relative to repo root). Must contain a `Makefile` with an `html` target that emits to `_build/html/` |
 
