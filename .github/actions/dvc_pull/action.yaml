@@ -39,7 +39,7 @@ runs:
       shell: bash
       run: |
         pip install --upgrade pip
-        # dulwich>=1.2.15 breaks gitignore matching, silently emptying dvc's stage index.
+        # dvc mis-prunes its stage walk with dulwich>=1.2.15's (correct) is_ignored; `dvc pull` then silently no-ops.
         pip install 'dvc[s3]==3.66.1' 'dulwich<1.2.15'
 
     - name: Remove 'profile' section from dvc config file
