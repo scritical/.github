@@ -85,3 +85,13 @@ jobs:
       CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
     steps: *build_steps
           
+
+  # Opt-in: only repos that declare LLVM_CONFIG get this job, so nothing changes for the rest.
+  build-llvm:
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    if: inputs.LLVM_CONFIG != ''
+    env:
+      DOCKER_TAG: u24-llvm-ompi-latest
+      CONFIG_FILE: ${{ inputs.LLVM_CONFIG }}
+    steps: *build_steps
