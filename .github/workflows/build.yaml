@@ -17,6 +17,14 @@ on:
         type: string
         default: ""
         description: "Path to LLVM (clang/flang) configuration file"
+      SKIP_GCC:
+        type: boolean
+        default: false
+        description: "Skip the GCC build. A deliberate opt-out: gcc and Intel are the baseline"
+      SKIP_INTEL:
+        type: boolean
+        default: false
+        description: "Skip the Intel build. A deliberate opt-out: gcc and Intel are the baseline"
       BUILD_SCRIPT:
         type: string
         default: ".github/build.sh"
@@ -35,9 +43,11 @@ on:
         description: "Bitwarden machine account access token"
 
 jobs:
+  # gcc and Intel run unless a repo opts out explicitly with SKIP_GCC/SKIP_INTEL.
   build-gcc:
     runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    if: ${{ !inputs.SKIP_GCC }}
     env:
       DOCKER_TAG: u24-gcc-ompi-latest
       CONFIG_FILE: ${{ inputs.GCC_CONFIG }}
@@ -80,6 +90,7 @@ jobs:
   build-intel:
     runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    if: ${{ !inputs.SKIP_INTEL }}
     env:
       DOCKER_TAG: u24-intel-impi-latest
       CONFIG_FILE: ${{ inputs.INTEL_CONFIG }}
