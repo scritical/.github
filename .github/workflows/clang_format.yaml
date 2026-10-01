@@ -10,12 +10,25 @@ jobs:
   clang_format:
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.TIMEOUT }}
+    env:
+      # Releases format differently. Keep in sync with clang-format.sh and the docker-sr images.
+      CLANG_FORMAT_VERSION: "22.1.8"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      # From PyPI: an apt clang-format-NN does not replace the runner's unversioned clang-format.
       - name: Install clang-format
-        run: sudo apt-get install clang-format-20 -y
+        run: |
+          pip install "clang-format==${CLANG_FORMAT_VERSION}"
+          clang-format --version
+          clang-format --version | grep -q "version ${CLANG_FORMAT_VERSION}" || \
+            { echo "clang-format on PATH is not ${CLANG_FORMAT_VERSION}"; exit 1; }
 
       - name: Get clang-format config
         run: |

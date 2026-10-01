@@ -157,6 +157,8 @@ C/C++ code formatting checks using clang-format.
 
 **Configuration Override:** Create a `.clang-format` file in your repo root.
 
+Uses the exact clang-format version pinned in the workflow (`CLANG_FORMAT_VERSION`), installed from PyPI. `clang-format.sh` and the Docker images use the same version, so install it locally with `pip install clang-format==<version>`.
+
 ---
 
 ### fprettify.yaml
