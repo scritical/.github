@@ -21,6 +21,16 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
+# Releases format differently. Keep in sync with clang_format.yaml and the docker-sr images.
+REQUIRED_VERSION="22.1.8"
+
+installed_version=$(clang-format --version 2>/dev/null | grep -oE 'version [0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2)
+if [[ "$installed_version" != "$REQUIRED_VERSION" ]]; then
+    echo "clang-format $REQUIRED_VERSION is required, found: ${installed_version:-none}"
+    echo "Install it with: pip install clang-format==$REQUIRED_VERSION"
+    exit 3
+fi
+
 # Set some constants
 CLANGFORMAT_CONFIG_FILE=""
 LOCAL_CONFIG_FILE=".clang-format"
