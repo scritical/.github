@@ -49,8 +49,6 @@ runs:
     - name: Start Docker container
       shell: bash
       run: |
-        # --shm-size: Docker's 64 MB /dev/shm default is too small for Intel MPI's shared-memory
-        # transport, which then kills multi-rank tests with SIGBUS. 2g matches docker's docker_test.sh.
         docker run -t -d --name app --shm-size=2g \
           --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
           scritical/private-dev:${{ inputs.DOCKER_TAG }} /bin/bash
