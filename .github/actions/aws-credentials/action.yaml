@@ -1,0 +1,25 @@
+name: AWS credentials
+
+description: Assumes the AWS role stored in Bitwarden and exports its credentials to the job environment.
+
+inputs:
+  BW_ACCESS_TOKEN:
+    description: Bitwarden machine account access token
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+    - name: Get AWS role from Bitwarden
+      uses: bitwarden/sm-action@v2
+      with:
+        access_token: ${{ inputs.BW_ACCESS_TOKEN }}
+        secrets: |
+          0ef1b3e4-10c4-4bdd-8aed-b41d016e9518 > AWS_ROLE_ARN
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN }}
+        aws-region: us-east-2
