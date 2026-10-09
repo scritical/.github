@@ -49,7 +49,7 @@ runs:
     - name: Start Docker container
       shell: bash
       run: |
-        docker run -t -d --name app \
+        docker run -t -d --name app --shm-size=2g \
           --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
           scritical/private-dev:${{ inputs.DOCKER_TAG }} /bin/bash
 
