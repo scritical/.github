@@ -11,18 +11,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Get AWS credentials from Bitwarden
-      uses: bitwarden/sm-action@v2
+    - name: AWS credentials
+      uses: scritical/.github/.github/actions/aws-credentials@main
       with:
-        access_token: ${{ inputs.BW_ACCESS_TOKEN }}
-        secrets: |
-          0ef1b3e4-10c4-4bdd-8aed-b41d016e9518 > AWS_ROLE_ARN
-
-    - name: Configure AWS Credentials for DVC
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ env.AWS_ROLE_ARN }}
-        aws-region: us-east-2
+        BW_ACCESS_TOKEN: ${{ inputs.BW_ACCESS_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v6

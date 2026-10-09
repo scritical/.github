@@ -22,6 +22,8 @@ This repo stores the following shared repository settings/configurations/templat
   - `composite actions`
     - `docker-setup`
     - `docker-cleanup`
+    - `aws-credentials`: assumes the AWS role stored in Bitwarden, without pulling DVC files
+    - `dvc_pull`: installs DVC and pulls the repo's DVC files; uses `aws-credentials`
   - `fprettify`
   - `tapenade`
   - `branch-name-check`
