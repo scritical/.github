@@ -45,4 +45,5 @@ jobs:
             app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.SCRIPT }}"
 
       - name: Docker cleanup
+        if: always()
         uses: scritical/.github/.github/actions/docker-cleanup@main
