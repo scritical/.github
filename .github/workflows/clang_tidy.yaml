@@ -1,0 +1,48 @@
+on:
+  workflow_call:
+    inputs:
+      DOCKER_TAG:
+        type: string
+        default: "u24-llvm-ompi-latest"
+        description: "Image to run in (scritical/private-dev:<tag>); the repo's build must configure there"
+      SCRIPT:
+        type: string
+        default: ".github/clang_tidy.sh"
+        description: "Repo-owned script that configures the compile databases and runs clang-tidy on the changed lines"
+      TIMEOUT:
+        type: number
+        default: 60
+        description: "Timeout for the job in minutes"
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
+
+jobs:
+  clang_tidy:
+    # Only a pull request has a base to diff against.
+    if: github.event_name == 'pull_request'
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
+    timeout-minutes: ${{ inputs.TIMEOUT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          # A pull_request checkout is the merge commit, so HEAD^1 is the base tip and
+          # HEAD^1...HEAD is exactly what the pull request changes.
+          fetch-depth: 2
+
+      - name: Docker setup
+        uses: scritical/.github/.github/actions/docker-setup@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
+
+      - name: clang-tidy on the changed lines
+        run: |
+          docker exec \
+            -e CLANG_TIDY_BASE=HEAD^1 \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.SCRIPT }}"
+
+      - name: Docker cleanup
+        uses: scritical/.github/.github/actions/docker-cleanup@main
