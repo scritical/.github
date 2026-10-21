@@ -10,7 +10,7 @@ This repo stores the following shared repository settings/configurations/templat
   - `clang_format`
   - `clang_tidy`
     - clang-tidy on the lines a pull request changes, in a docker image (`DOCKER_TAG`, default the LLVM image)
-    - Runs the repo's own script (`SCRIPT`, default `.github/clang_tidy.sh`) with `CLANG_TIDY_BASE=HEAD^1`
+    - Runs the repo's own script (`SCRIPT`, required) with `CLANG_TIDY_BASE=HEAD^1`
     - Uses `docker-setup` and `docker-cleanup`
   - `build`
     - Docker build

@@ -7,7 +7,7 @@ on:
         description: "Image to run in (scritical/private-dev:<tag>); the repo's build must configure there"
       SCRIPT:
         type: string
-        default: ".github/clang_tidy.sh"
+        required: true
         description: "Repo-owned script that configures the compile databases and runs clang-tidy on the changed lines"
       TIMEOUT:
         type: number
