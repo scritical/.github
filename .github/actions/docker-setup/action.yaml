@@ -33,7 +33,7 @@ runs:
         echo "DOCKER_MOUNT_DIR=$scritical_homedir/mount/$repo_name" >> "$GITHUB_ENV"
 
     - name: Get Docker credentials from Bitwarden
-      uses: bitwarden/sm-action@v2
+      uses: bitwarden/sm-action@v3.0.1
       with:
         access_token: ${{ inputs.BW_ACCESS_TOKEN }}
         secrets: |
