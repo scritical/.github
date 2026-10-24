@@ -81,7 +81,7 @@ Jobs: `build-cuda` (CPU runner) and `test-gpu` (GPU runner, `needs: build-cuda`)
 | `TEST_SCRIPT` | string | n/a | Path to the test script, which reads `BUILD_ARTIFACT` |
 | `BUILD_ARTIFACT` | string | n/a | Packed build written by the build script, relative to the repository root |
 | `DOCKER_TAG` | string | `u24-llvm-ompi-latest` | Tag of `scritical/private-dev` image to build and test inside |
-| `USE_DVC` | boolean | `false` | Enables DVC to pull reference data for the GPU tests |
+| `USE_DVC` | boolean | `false` | Enables DVC to pull reference data for the test job only |
 | `BUILD_TIMEOUT` | number | `120` | Runtime allowed for the build job, in minutes |
 | `TEST_TIMEOUT` | number | `120` | Runtime allowed for the test job, in minutes |
 
