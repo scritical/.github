@@ -1,0 +1,132 @@
+# Build CUDA code on a CPU runner, then test it on a GPU runner.
+#
+# The build runs on the CPU runner because the GPU runner's CPU is slow and the GPU runner costs about $1/h.
+# The packed build travels between the jobs as the `cuda-build` artifact.
+#
+# test-gpu must never be a required check and nothing should depend on it: GPU runners are ephemeral and
+# can queue for hours. A failure of test-gpu is not hidden; the job shows red.
+#
+# Pass the image tag (DOCKER_TAG), not the image name: a job output that contains the masked DockerHub
+# user is dropped by Actions, so both jobs build the image name from the tag themselves.
+on:
+  workflow_call:
+    inputs:
+      CONFIG_FILE:
+        type: string
+        required: true
+        description: "Path to the build configuration file"
+      BUILD_SCRIPT:
+        type: string
+        required: true
+        description: "Path to build script, which writes BUILD_ARTIFACT"
+      TEST_SCRIPT:
+        type: string
+        required: true
+        description: "Path to test script, which reads BUILD_ARTIFACT"
+      BUILD_ARTIFACT:
+        type: string
+        required: true
+        description: "Packed build written by the build script, relative to the repository root"
+      DOCKER_TAG:
+        type: string
+        default: u24-llvm-ompi-latest
+        description: "Docker image tag to build and test in"
+      USE_DVC:
+        type: boolean
+        default: false
+        description: "Enables DVC to pull reference data for the test job only."
+      BUILD_TIMEOUT:
+        type: number
+        default: 120
+        description: "Timeout for the build job in minutes"
+      TEST_TIMEOUT:
+        type: number
+        default: 120
+        description: "Timeout for the test job in minutes"
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+        description: "Bitwarden machine account access token"
+
+jobs:
+  build-cuda:
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu]
+    timeout-minutes: ${{ inputs.BUILD_TIMEOUT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Docker setup
+        uses: scritical/.github/.github/actions/docker-setup@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
+
+      - name: Build
+        run: |
+          docker exec \
+            -e CONFIG_FILE="${{ inputs.CONFIG_FILE }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && /bin/bash ${{ inputs.BUILD_SCRIPT }}"
+
+      - name: Copy the packed build out of the container
+        run: |
+          mkdir -p "$(dirname "${{ inputs.BUILD_ARTIFACT }}")"
+          docker cp "app:$DOCKER_WORKING_DIR/${{ inputs.BUILD_ARTIFACT }}" "${{ inputs.BUILD_ARTIFACT }}"
+
+      # Default compression: gzip -1 shrinks the packed build by about 62% (764 MB to 286 MB).
+      - name: Upload the packed build
+        uses: actions/upload-artifact@v7
+        with:
+          name: cuda-build
+          path: ${{ inputs.BUILD_ARTIFACT }}
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Docker cleanup
+        if: always()
+        uses: scritical/.github/.github/actions/docker-cleanup@main
+
+  test-gpu:
+    needs: build-cuda
+    runs-on: [self-hosted, linux, x64, ubuntu-2404-8vcpu-gpu-fp16-lite]
+    timeout-minutes: ${{ inputs.TEST_TIMEOUT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Pull DVC files
+        if: inputs.USE_DVC
+        uses: scritical/.github/.github/actions/dvc_pull@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+
+      # Download into the workspace before docker-setup, which copies the workspace into the container.
+      - name: Find the directory of the packed build
+        id: artifact
+        run: echo "dir=$(dirname "${{ inputs.BUILD_ARTIFACT }}")" >> "$GITHUB_OUTPUT"
+
+      - name: Download the packed build
+        uses: actions/download-artifact@v8
+        with:
+          name: cuda-build
+          path: ${{ steps.artifact.outputs.dir }}
+
+      - name: Docker setup
+        uses: scritical/.github/.github/actions/docker-setup@main
+        with:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
+          DOCKER_RUN_ARGS: --runtime=nvidia --gpus all
+
+      - name: Test
+        run: |
+          docker exec \
+            -e AGENT_NAME="${{ runner.name }}" \
+            -e BUILD_REASON="${{ github.event_name }}" \
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && source ~/MPIOversubscribe.sh && /bin/bash ${{ inputs.TEST_SCRIPT }}"
+
+      - name: Docker cleanup
+        if: always()
+        uses: scritical/.github/.github/actions/docker-cleanup@main

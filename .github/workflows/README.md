@@ -7,6 +7,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | Workflow | Description |
 | :------- | :---------- |
 | `build.yaml` | Build and test code in Docker container |
+| `build-gpu.yaml` | Build CUDA on a CPU runner and test it on a GPU runner (never a required check) |
 | `build-docs.yaml` | Build documentation site in Docker container and publish it to `api-docs.scritical.com` |
 | `tapenade.yaml` | Tapenade automatic differentiation checks |
 | `clang_format.yaml` | C/C++ formatting checks |
@@ -57,6 +58,32 @@ Docker-based build and test workflow using the `scritical/private-dev` image wit
 | `INTEL_CONFIG` | string | `""` | Path to Intel configuration file (from repository root) |
 | `BUILD_SCRIPT` | string | `.github/build.sh` | Path to build script. Empty string skips this step |
 | `TEST_SCRIPT` | string | `.github/test.sh` | Path to test script. Empty string skips this step |
+
+**Required Secrets:**
+| Name | Description |
+| :--- | :---------- |
+| `BW_ACCESS_TOKEN` | Bitwarden access token |
+
+If these secrets are configured at the organization level, callers can use `secrets: inherit` instead of listing each secret.
+
+---
+
+### build-gpu.yaml
+
+Builds CUDA code on a CPU runner (the GPU runner's CPU is slow and costs about $1/h), uploads the packed build as the `cuda-build` artifact (retention 1 day), and tests it on an L4 GPU runner started with `--runtime=nvidia --gpus all`.
+
+Jobs: `build-cuda` (CPU runner) and `test-gpu` (GPU runner, `needs: build-cuda`). GPU runners are ephemeral and can queue for hours, so `test-gpu` must never be a required check and nothing should depend on it. Pass the image tag, not the image name: a job output containing the masked DockerHub user is dropped.
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `CONFIG_FILE` | string | n/a | Path to the build configuration file (from repository root). Passed to the build script as `CONFIG_FILE` |
+| `BUILD_SCRIPT` | string | n/a | Path to the build script, which writes `BUILD_ARTIFACT` |
+| `TEST_SCRIPT` | string | n/a | Path to the test script, which reads `BUILD_ARTIFACT` |
+| `BUILD_ARTIFACT` | string | n/a | Packed build written by the build script, relative to the repository root |
+| `DOCKER_TAG` | string | `u24-llvm-ompi-latest` | Tag of `scritical/private-dev` image to build and test inside |
+| `USE_DVC` | boolean | `false` | Enables DVC to pull reference data for the test job only |
+| `BUILD_TIMEOUT` | number | `120` | Runtime allowed for the build job, in minutes |
+| `TEST_TIMEOUT` | number | `120` | Runtime allowed for the test job, in minutes |
 
 **Required Secrets:**
 | Name | Description |
