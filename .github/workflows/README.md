@@ -34,6 +34,7 @@ Shared composite actions used by workflows and repository CI files.
 | `BASHRC` | string | `/home/scriticaluser/.bashrc_scritical` | Bashrc for container environment |
 | `DOCKER_TAG` | string | n/a | Docker image tag to use |
 | `BW_ACCESS_TOKEN` | string | n/a | Bitwarden access token |
+| `DOCKER_RUN_ARGS` | string | `""` | Extra arguments for `docker run`, such as `--runtime=nvidia --gpus all` on a GPU runner |
 
 ### docker-cleanup
 

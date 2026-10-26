@@ -17,6 +17,10 @@ inputs:
   BW_ACCESS_TOKEN:
     description: Bitwarden machine account access token
     required: true
+  DOCKER_RUN_ARGS:
+    description: Extra arguments for docker run, such as "--runtime=nvidia --gpus all" on a GPU runner
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -49,7 +53,7 @@ runs:
     - name: Start Docker container
       shell: bash
       run: |
-        docker run -t -d --name app --shm-size=2g \
+        docker run -t -d --name app --shm-size=2g ${{ inputs.DOCKER_RUN_ARGS }} \
           --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
           scritical/private-dev:${{ inputs.DOCKER_TAG }} /bin/bash
 
