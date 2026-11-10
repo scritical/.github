@@ -42,4 +42,5 @@ jobs:
 
       - name: Run clang-format
         run: |
-          find . -iname '*.h' -o -iname '*.hpp' -o -iname '*.c' -o -iname '*.cpp' | xargs clang-format -style=file --dry-run --Werror
+          # The tracked files only, as clang-format.sh does: no submodule contents.
+          git ls-files -z -- ':(icase)*.h' ':(icase)*.hpp' ':(icase)*.c' ':(icase)*.cpp' | xargs -0 -r clang-format -style=file --dry-run --Werror

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Format only the files git tracks: never ignored or generated files (build trees, downloaded
+# subprojects, virtual environments) or the contents of submodules, which belong to other repos.
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Not inside a git work tree: run this from the repository to format. Exiting"
+    exit 2
+fi
+
 FPRETTIFY_CONFIG_FILE=""
 LOCAL_CONFIG_FILE=".fprettify.rc"
 GLOBAL_CONFIG_FILE="../.github/.fprettify.rc"
@@ -22,7 +29,7 @@ else
 fi
 
 # Run fprettify on non-differentiated Fortran 90 source files
-find . -type f -iname '*.f90' ! -iname '*_b.f90' ! -iname '*_d.f90' -print0 | while read -d $'\0' fileName
+git ls-files -z -- ':(icase)*.f90' ':(exclude,icase)*_b.f90' ':(exclude,icase)*_d.f90' | while IFS= read -r -d '' fileName
 do
     echo "Checking $fileName"
     fprettify --config-file "$FPRETTIFY_CONFIG_FILE" "$fileName"
