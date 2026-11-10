@@ -31,6 +31,13 @@ if [[ "$installed_version" != "$REQUIRED_VERSION" ]]; then
     exit 3
 fi
 
+# Format only the files git tracks: never ignored or generated files (build trees, downloaded
+# subprojects, virtual environments) or the contents of submodules, which belong to other repos.
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Not inside a git work tree: run this from the repository to format. Exiting"
+    exit 2
+fi
+
 # Set some constants
 CLANGFORMAT_CONFIG_FILE=""
 LOCAL_CONFIG_FILE=".clang-format"
@@ -67,9 +74,9 @@ fi
 echo "Running clang-format with args: $clang_format_args"
 
 # Run the formatting
-find . -iname '*.h' -o -iname '*.hpp' -o -iname '*.c' -o -iname '*.cpp' | xargs clang-format $clang_format_args
+git ls-files -z -- ':(icase)*.h' ':(icase)*.hpp' ':(icase)*.c' ':(icase)*.cpp' | xargs -0 -r clang-format $clang_format_args
 
-# Store the exit code in case we are running dry-run and find
+# Store the exit code in case we are running dry-run
 clang_exit_code=$?
 
 if [[ 1 == "$global" ]]; then

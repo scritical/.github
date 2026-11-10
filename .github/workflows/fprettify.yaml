@@ -40,8 +40,8 @@ jobs:
             CONFIG_ARG="--config-file $CONFIG_FILE"
           fi
 
-          # Run fprettify on non-differentiated Fortran 90 source files
-          find . -type f -iname '*.f90' ! -iname '*_b.f90' ! -iname '*_d.f90' -print0 | while read -d $'\0' fileName
+          # Run fprettify on the tracked non-differentiated Fortran 90 source files, as fprettify.sh does
+          git ls-files -z -- ':(icase)*.f90' ':(exclude,icase)*_b.f90' ':(exclude,icase)*_d.f90' | while IFS= read -r -d '' fileName
           do
             echo "Checking $fileName"
             fprettify $CONFIG_ARG "$fileName"
