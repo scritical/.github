@@ -14,7 +14,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `fprettify.yaml` | Fortran 90 formatting checks |
 | `ruff.yaml` | Python formatting and linting with Ruff |
 | `mypy.yaml` | Python type checking with MyPy |
-| `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-` (documentation only) |
+| `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-`, and fail a `doc-` pull request that changes a non-documentation path |
 
 ---
 
@@ -203,10 +203,35 @@ Fortran 90 code formatting checks using fprettify.
 
 ### branch-name-check.yaml
 
-Enforces branch naming conventions for pull requests:
+Enforces branch naming conventions for pull requests. It has no inputs.
 
-- For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
-- For PRs targeting `client-*`, source branches must be `main` or start with `feature-`, `bugfix-`, or `hotfix-`.
+Job `check-branch-name`:
+
+- For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, `hotfix-` or `doc-`.
+- For PRs targeting `client-*`, source branches must be `main` or start with `feature-`, `bugfix-`, `hotfix-` or `doc-`.
+
+Job `doc-only-check` runs only on a pull request from a `doc-` branch. A `doc-` branch holds a documentation-only change, so a repository can skip its build and test jobs on that prefix:
+
+```yaml
+  build:
+    if: ${{ !startsWith(github.head_ref, 'doc-') }}
+    uses: scritical/.github/.github/workflows/build.yaml@main
+```
+
+The job fails when the pull request changes a path that is not a documentation path. It reads the changed paths from `git diff --name-only --no-renames <base>...<head>`, so a renamed file counts under both names. It fails on an empty list.
+
+The documentation paths come from `.github/doc-paths` on the base commit of the pull request, so a pull request cannot change the paths that it is checked against. The file holds one git pathspec per line. A line that starts with `#` is a comment:
+
+```
+# A directory, with everything under it.
+docs/
+# A file name pattern, in every directory.
+*.md
+```
+
+Without the file, the documentation paths are `doc/`, `docs/` and `*.md`. A file with no pathspec fails the job.
+
+The workflow also has a `pull_request` trigger, so an organization ruleset can require it on every pull request with no caller job.
 
 ## Setting Up Workflows
 
