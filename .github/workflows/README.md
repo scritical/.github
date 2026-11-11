@@ -14,7 +14,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `fprettify.yaml` | Fortran 90 formatting checks |
 | `ruff.yaml` | Python formatting and linting with Ruff |
 | `mypy.yaml` | Python type checking with MyPy |
-| `branch-name-check.yaml` | Enforce branch naming conventions |
+| `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-` (documentation only) |
 
 ---
 
