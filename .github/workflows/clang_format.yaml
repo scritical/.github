@@ -43,4 +43,4 @@ jobs:
       - name: Run clang-format
         run: |
           # The tracked files only, as clang-format.sh does: no submodule contents.
-          git ls-files -z -- ':(icase)*.h' ':(icase)*.hpp' ':(icase)*.c' ':(icase)*.cpp' | xargs -0 -r clang-format -style=file --dry-run --Werror
+          git ls-files -z -- ':(icase)*.h' ':(icase)*.hpp' ':(icase)*.c' ':(icase)*.cpp' ':(icase)*.cu' ':(icase)*.cuh' | xargs -0 -r clang-format -style=file --dry-run --Werror
