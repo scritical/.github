@@ -1,3 +1,3 @@
-# The documentation paths of a doc- branch, one git pathspec per line. The doc-only-check job of
-# branch-name-check.yaml reads this file from the base commit of the pull request.
+# This file lists the documentation paths of a doc- branch, one git pathspec per line. The doc-only-check job
+# of branch-name-check.yaml reads this file from the base commit of the pull request.
 *.md

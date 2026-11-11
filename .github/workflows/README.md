@@ -210,7 +210,7 @@ Job `check-branch-name`:
 - For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, `hotfix-` or `doc-`.
 - For PRs targeting `client-*`, source branches must be `main` or start with `feature-`, `bugfix-`, `hotfix-` or `doc-`.
 
-Job `doc-only-check` runs only on a pull request from a `doc-` branch. A `doc-` branch holds a documentation-only change, so a repository can skip its build and test jobs on that prefix:
+Job `doc-only-check` runs only on a pull request from a `doc-` branch. A repository can skip its build and test jobs on the `doc-` prefix, because a `doc-` branch holds a documentation-only change:
 
 ```yaml
   build:
@@ -218,9 +218,9 @@ Job `doc-only-check` runs only on a pull request from a `doc-` branch. A `doc-` 
     uses: scritical/.github/.github/workflows/build.yaml@main
 ```
 
-The job fails when the pull request changes a path that is not a documentation path. It reads the changed paths from `git diff --name-only --no-renames <base>...<head>`, so a renamed file counts under both names. It fails on an empty list.
+The job fails when the pull request changes a path outside the documentation paths. A renamed file counts under both names, because the job reads the changed paths from `git diff --name-only --no-renames <base>...<head>`. The job also fails when the diff lists no path.
 
-The documentation paths come from `.github/doc-paths` on the base commit of the pull request, so a pull request cannot change the paths that it is checked against. The file holds one git pathspec per line. A line that starts with `#` is a comment:
+The job reads the documentation paths from `.github/doc-paths` on the base commit of the pull request. A pull request therefore cannot change its own documentation paths. The file holds one git pathspec per line. A line that starts with `#` is a comment:
 
 ```
 # A directory, with everything under it.
@@ -229,14 +229,14 @@ docs/
 *.md
 ```
 
-The file is required. The job fails when the base commit has no `.github/doc-paths`, or when the file holds no pathspec. The first `doc-` pull request of a repository therefore needs the file on the base branch already, so add it in a `feature-` pull request.
+The file is required. The job fails when the base commit has no `.github/doc-paths`, or when the file holds no pathspec. A repository adds the file in a `feature-` pull request before its first `doc-` pull request.
 
 A repository that skips jobs on the `doc-` prefix must do two things:
 
-- List in `.github/doc-paths` only the paths that no skipped job reads. In a Sphinx repository, `doc/` also holds `conf.py` and can hold scripts, and a documentation build or a test can read them.
-- Keep each check of the whole tree running on a `doc-` pull request. A check that reads every tracked file, such as a check for binary files, also reads the documentation paths. If the check runs only in a skipped job, move it to a job that runs on `doc-` pull requests.
+- List in `.github/doc-paths` only the paths that no skipped job reads. In a Sphinx repository, `doc/` also holds `conf.py` and can hold scripts. A documentation build or a test can read those files.
+- Run each check of the whole tree on a `doc-` pull request too. A check that reads every tracked file, such as a check for binary files, also reads the documentation paths. If the check runs only in a skipped job, move it to a job that runs on `doc-` pull requests.
 
-The workflow also has a `pull_request` trigger, so an organization ruleset can require it on every pull request with no caller job.
+An organization ruleset can require the workflow on every pull request with no caller job, because the workflow also has a `pull_request` trigger.
 
 ## Setting Up Workflows
 
