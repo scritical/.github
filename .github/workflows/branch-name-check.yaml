@@ -49,11 +49,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      # The full history: the diff below needs the merge base of the two branches.
+      # The full history: the diff below needs the merge base of the two branches. The diff reads commits and
+      # trees only, so the clone leaves out the file contents of the history. If the checkout did not download
+      # .github/doc-paths of the base commit, git fetches it when the step below reads it.
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: Check that the pull request changes documentation only
         shell: bash
@@ -68,14 +71,19 @@ jobs:
           # The documentation paths come from the base commit, so the pull request cannot change them.
           # .github/doc-paths holds one git pathspec per line: "docs/" is a directory, and "*.md" matches in
           # every directory. A line that starts with "#" is a comment.
-          if git cat-file -e "${BASE_SHA}:.github/doc-paths" 2>/dev/null; then
-            mapfile -t patterns < <(git show "${BASE_SHA}:.github/doc-paths" | sed -e 's/[[:space:]]*$//' | grep -v -e '^#' -e '^$' || true)
-            if ((${#patterns[@]} == 0)); then
-              echo "error: .github/doc-paths on the base branch holds no pathspec." >&2
-              exit 1
-            fi
-          else
-            patterns=('doc/' 'docs/' '*.md')
+          # The file is required: a default list can hold a path that a skipped job reads. The tree of the base
+          # commit shows whether the file exists, so a failed fetch of the file contents is a separate failure.
+          doc_paths_entry="$(git ls-tree --name-only "${BASE_SHA}" -- .github/doc-paths)"
+          if [[ -z "${doc_paths_entry}" ]]; then
+            echo "error: the base branch has no .github/doc-paths file. Add the file to the base branch, with" >&2
+            echo "       one git pathspec per line, before you open a doc- pull request." >&2
+            exit 1
+          fi
+          doc_paths="$(git show "${BASE_SHA}:.github/doc-paths")"
+          mapfile -t patterns < <(printf '%s\n' "${doc_paths}" | sed -e 's/[[:space:]]*$//' | grep -v -e '^#' -e '^$' || true)
+          if ((${#patterns[@]} == 0)); then
+            echo "error: .github/doc-paths on the base branch holds no pathspec." >&2
+            exit 1
           fi
           echo "Documentation paths:"
           printf '  %s\n' "${patterns[@]}"

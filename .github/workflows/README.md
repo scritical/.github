@@ -229,7 +229,12 @@ docs/
 *.md
 ```
 
-Without the file, the documentation paths are `doc/`, `docs/` and `*.md`. A file with no pathspec fails the job.
+The file is required. The job fails when the base commit has no `.github/doc-paths`, or when the file holds no pathspec. The first `doc-` pull request of a repository therefore needs the file on the base branch already, so add it in a `feature-` pull request.
+
+A repository that skips jobs on the `doc-` prefix must do two things:
+
+- List in `.github/doc-paths` only the paths that no skipped job reads. In a Sphinx repository, `doc/` also holds `conf.py` and can hold scripts, and a documentation build or a test can read them.
+- Keep each check of the whole tree running on a `doc-` pull request. A check that reads every tracked file, such as a check for binary files, also reads the documentation paths. If the check runs only in a skipped job, move it to a job that runs on `doc-` pull requests.
 
 The workflow also has a `pull_request` trigger, so an organization ruleset can require it on every pull request with no caller job.
 
