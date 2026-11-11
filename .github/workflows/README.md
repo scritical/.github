@@ -15,6 +15,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `ruff.yaml` | Python formatting and linting with Ruff |
 | `mypy.yaml` | Python type checking with MyPy |
 | `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-` (documentation only) |
+| `bump_version.yaml` | Tag each merged PR with the next version from its `[major]`, `[minor]` or `[patch]` title |
 
 ---
 
@@ -207,6 +208,34 @@ Enforces branch naming conventions for pull requests:
 
 - For PRs targeting `main`, source branches must start with `feature-`, `bugfix-`, or `hotfix-`.
 - For PRs targeting `client-*`, source branches must be `main` or start with `feature-`, `bugfix-`, or `hotfix-`.
+
+---
+
+### bump_version.yaml
+
+Tags the merge commit of each merged PR with the next `vX.Y.Z` version, bumped by the `[major]`, `[minor]` or `[patch]` keyword in the PR title.
+Call it on `pull_request: closed` and grant the calling job both permissions:
+
+```yaml
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  bump_version:
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: scritical/.github/.github/workflows/bump_version.yaml@main
+```
+
+A stack merged at once closes all its PRs together and starts one run per PR ([#77](https://github.com/scritical/.github/issues/77)).
+Each run tags, in stack order, every merged PR at or below its own that has no tag yet, so every PR still gets its own tag and the tags follow the commit order.
+The tags of a run go up in one atomic push. Runs that tag the same PRs compute the same tags, and a run whose push is rejected fetches the tags again and recomputes.
+Without `pull-requests: read` the workflow cannot detect stacks, warns, and tags every PR on its own.
 
 ## Setting Up Workflows
 
