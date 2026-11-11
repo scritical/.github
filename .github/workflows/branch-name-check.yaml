@@ -12,12 +12,12 @@ jobs:
           echo "Source branch: $BRANCH_NAME"
           echo "Target branch: ${{ github.base_ref }}"
 
-          if [[ $BRANCH_NAME == hotfix-* ]] || [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]]; then
+          if [[ $BRANCH_NAME == hotfix-* ]] || [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]] || [[ $BRANCH_NAME == doc-* ]]; then
             echo "Branch name is valid"
             exit 0
           else
             echo "Invalid branch name for main pull request"
-            echo "Branch name must start with 'hotfix-', 'feature-', or 'bugfix-'"
+            echo "Branch name must start with 'hotfix-', 'feature-', 'bugfix-', or 'doc-'"
             exit 1
           fi
 
@@ -28,11 +28,11 @@ jobs:
           echo "Source branch: $BRANCH_NAME"
           echo "Target branch: ${{ github.base_ref }}"
 
-          if [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]] || [[ $BRANCH_NAME == hotfix-* ]] || [[ $BRANCH_NAME == main ]]; then
+          if [[ $BRANCH_NAME == feature-* ]] || [[ $BRANCH_NAME == bugfix-* ]] || [[ $BRANCH_NAME == hotfix-* ]] || [[ $BRANCH_NAME == doc-* ]] || [[ $BRANCH_NAME == main ]]; then
             echo "Branch name is valid"
             exit 0
           else
             echo "Invalid branch name for client pull request"
-            echo "Branch name must start with 'feature-', 'bugfix-', or 'hotfix-' or be 'main'"
+            echo "Branch name must start with 'feature-', 'bugfix-', 'hotfix-', or 'doc-' or be 'main'"
             exit 1
           fi

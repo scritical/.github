@@ -29,4 +29,5 @@ This repo stores the following shared repository settings/configurations/templat
   - `fprettify`
   - `tapenade`
   - `branch-name-check`
+    - Branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-` (documentation only)
 - Issue/PR labels shared across the organization
