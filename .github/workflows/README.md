@@ -177,7 +177,7 @@ Here is the link to our tapenade version: https://gitlab.inria.fr/tapenade/tapen
 
 ### clang_format.yaml
 
-C/C++ code formatting checks using clang-format.
+C/C++ and CUDA code formatting checks using clang-format: the tracked `*.h`, `*.hpp`, `*.c`, `*.cpp`, `*.cu` and `*.cuh` files.
 
 | Name | Type | Default | Description |
 | :--- | :--- | :------ | :---------- |
