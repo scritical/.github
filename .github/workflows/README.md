@@ -232,10 +232,8 @@ jobs:
     uses: scritical/.github/.github/workflows/bump_version.yaml@main
 ```
 
-A stack merged at once closes all its PRs together and starts one run per PR ([#77](https://github.com/scritical/.github/issues/77)).
-Each run tags, in stack order, every merged PR at or below its own that has no tag yet, so every PR still gets its own tag and the tags follow the commit order.
-The tags of a run go up in one atomic push. Runs that tag the same PRs compute the same tags, and a run whose push is rejected fetches the tags again and recomputes.
-Without `pull-requests: read` the workflow cannot detect stacks, warns, and tags every PR on its own.
+In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push, so a stack merged at once still gets one tag per PR in commit order.
+Without `pull-requests: read`, stacks are not detected and each PR is tagged on its own.
 
 ## Setting Up Workflows
 

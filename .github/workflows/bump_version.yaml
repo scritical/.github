@@ -10,22 +10,18 @@ jobs:
     needs: extract_version_bump
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    # No permissions block: the job inherits the caller's grant. It needs contents: write to push tags and
-    # pull-requests: read to look up stacks. Asking for pull-requests here would fail every caller that grants
-    # only contents: write, so callers without it fall back to tagging each PR on its own.
+    # No permissions block: the job inherits the caller's grant, which needs contents: write and pull-requests: read.
+    # Requesting more than the caller grants fails the workflow at startup.
     steps:
     - uses: actions/checkout@v7
       with:
         ref: ${{ github.event.pull_request.merge_commit_sha }}
         fetch-depth: '0'
 
-    # Every merged PR gets its own vX.Y.Z tag, bumped by the [major], [minor] or [patch] keyword in its title.
-    # A stack merged at once closes all its PRs together, and one tag run per PR used to race (scritical/.github#77).
-    # Here every run tags, in stack order, each merged PR at or below its own that has no tag yet, and pushes those
-    # tags in one atomic push. Runs that tag the same PRs compute the same tags, so their pushes agree. A run whose
-    # push is rejected because another run took one of its tag names first fetches the tags again and recomputes.
-    # Not covered: a run that computes its tags, then loses the race to an unrelated PR merged at the same time,
-    # can still push a second tag for a commit that another run tagged in between.
+    # Each merged PR gets its own vX.Y.Z tag, bumped by the [major], [minor] or [patch] keyword in its title.
+    # In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push,
+    # so concurrent runs agree on the tags. A push rejected over a taken tag name is recomputed and retried.
+    # Limitation: a tag pushed for an unrelated PR mid-run can leave a stack commit with two tags.
     - name: Tag the merged PRs
       env:
         GH_TOKEN: ${{ github.token }}
@@ -38,8 +34,7 @@ jobs:
         set -euo pipefail
         version_pattern='^v[0-9]+\.[0-9]+\.[0-9]+$'
 
-        # Print the bump keyword of a PR title, or "none" unless it has exactly one, as extract_version_bump.yaml
-        # requires.
+        # Print the bump keyword of the title $1, or "none" unless it has exactly one.
         title_bump() {
           local title="${1,,}" bump found=()
           for bump in major minor patch; do
@@ -74,13 +69,12 @@ jobs:
 
         # Succeed when a version tag points at the commit $1.
         is_tagged() {
-          # grep reads all its input, so pipefail never sees git killed by SIGPIPE.
+          # grep without -q reads all its input, so pipefail never sees a SIGPIPE from git.
           git tag --list 'v*' --points-at "$1" | grep -E "$version_pattern" > /dev/null
         }
 
-        # Print "position<TAB>merged<TAB>sha<TAB>number<TAB>title" for each PR of the stack $1, in stack order.
-        # The stacks endpoint does not document its order, so the positions come from each PR. No field is empty,
-        # because read would merge the tabs around an empty field and shift the fields after it.
+        # Print "position<TAB>merged<TAB>sha<TAB>number<TAB>title" for each PR of the stack $1, sorted by position.
+        # No field may be empty: read collapses adjacent tabs.
         stack_prs() {
           local stack_json number
           stack_json=$(gh api "repos/$REPO/stacks/$1") || return 1
@@ -91,7 +85,7 @@ jobs:
           done | sort -n
         }
 
-        # Print "sha<TAB>number<TAB>bump" for each merged PR at or below position $2 in the stack $1, in stack order.
+        # Print "sha<TAB>number<TAB>bump" for each merged PR at or below position $2 in the stack $1.
         stack_releases() {
           local prs position merged sha number title
           if ! prs=$(stack_prs "$1"); then
@@ -108,12 +102,12 @@ jobs:
           done <<< "$prs"
         }
 
-        # Print the releases of this run: this PR alone, or the merged PRs of its stack up to this one.
+        # Print this run's releases: the merged PRs of its stack up to this one, or this PR alone.
         releases() {
           local stack
           if ! stack=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.stack'); then
-            echo "::warning::Could not read PR #$PR_NUMBER, so stacks cannot be detected. Grant the calling job" \
-              "'pull-requests: read' (scritical/.github#77). Tagging this PR on its own." >&2
+            echo "::warning::Could not read PR #$PR_NUMBER. Grant the calling job 'pull-requests: read' to tag" \
+              "stacks in order. Tagging this PR on its own." >&2
             stack=""
           fi
           if [[ -z "$stack" || "$stack" == "null" ]]; then
@@ -123,8 +117,8 @@ jobs:
           stack_releases "$(jq -r '.number' <<< "$stack")" "$(jq -r '.position' <<< "$stack")"
         }
 
-        # Plan a tag for each untagged release in the file $1, counting up from the latest version. Sets the
-        # arrays tag_names and refspecs.
+        # Plan a tag for each untagged release in the file $1, counting up from the latest version.
+        # Sets tag_names and refspecs.
         plan_tags() {
           local version sha number bump
           tag_names=()
@@ -145,7 +139,7 @@ jobs:
           done < "$1"
         }
 
-        # Succeed when another run has pushed one of the planned tag names since this run fetched the tags.
+        # Succeed when another run has pushed one of the planned tag names.
         lost_race() {
           local name
           git fetch --quiet --tags --force origin
