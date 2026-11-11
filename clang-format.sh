@@ -74,7 +74,7 @@ fi
 echo "Running clang-format with args: $clang_format_args"
 
 # Run the formatting
-git ls-files -z -- ':(icase)*.h' ':(icase)*.hpp' ':(icase)*.c' ':(icase)*.cpp' | xargs -0 -r clang-format $clang_format_args
+git ls-files -z -- ':(icase)*.h' ':(icase)*.hpp' ':(icase)*.c' ':(icase)*.cpp' ':(icase)*.cu' ':(icase)*.cuh' | xargs -0 -r clang-format $clang_format_args
 
 # Store the exit code in case we are running dry-run
 clang_exit_code=$?
