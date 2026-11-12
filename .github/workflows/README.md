@@ -15,7 +15,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `ruff.yaml` | Python formatting and linting with Ruff |
 | `mypy.yaml` | Python type checking with MyPy |
 | `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-` (documentation only) |
-| `bump_version.yaml` | Tag each merged PR with the next version from its `[major]`, `[minor]` or `[patch]` title |
+| `bump_version.yaml` | Tag merged PRs with the next version from the `[major]`, `[minor]` or `[patch]` keyword in their titles |
 
 ---
 
@@ -213,8 +213,9 @@ Enforces branch naming conventions for pull requests:
 
 ### bump_version.yaml
 
-Tags the merge commit of each merged PR with the next `vX.Y.Z` version, bumped by the `[major]`, `[minor]` or `[patch]` keyword in the PR title.
-Call it on `pull_request: closed` and grant the calling job both permissions:
+Tags the merge commit of a merged PR with the next `vX.Y.Z` version, bumped by the `[major]`, `[minor]` or `[patch]` keyword in the PR title.
+A PR whose title has no single keyword gets no tag and a warning, and the next tag covers it.
+Call it on `pull_request` events of type `closed`, and grant the calling job `contents: write` and `pull-requests: read`:
 
 ```yaml
 on:
@@ -232,8 +233,10 @@ jobs:
     uses: scritical/.github/.github/workflows/bump_version.yaml@main
 ```
 
-In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push, so a stack merged at once still gets one tag per PR in commit order.
-Without `pull-requests: read`, stacks are not detected and each PR is tagged on its own.
+Runs in a repository go one at a time, in the order they were queued.
+In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push, so a stack merged at once gets one tag per PR in commit order.
+A PR merged outside the stack around the same time can still get a version out of commit order.
+Without `pull-requests: read`, the run logs a warning and tags each PR on its own, so a stack merged at once can be tagged out of order.
 
 ## Setting Up Workflows
 

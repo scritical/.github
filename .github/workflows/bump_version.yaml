@@ -10,8 +10,13 @@ jobs:
     needs: extract_version_bump
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    # No permissions block: the job inherits the caller's grant, which needs contents: write and pull-requests: read.
-    # Requesting more than the caller grants fails the workflow at startup.
+    # No permissions block: the job inherits the caller's grant. It needs contents: write, and pull-requests: read
+    # lets it tag stacks in order. Requesting more than the caller grants fails the workflow at startup.
+    # One run at a time per repository, in the order they were queued, so no two runs plan tags at once.
+    concurrency:
+      group: bump-version
+      cancel-in-progress: false
+      queue: max
     steps:
     - uses: actions/checkout@v7
       with:
@@ -19,9 +24,9 @@ jobs:
         fetch-depth: '0'
 
     # Each merged PR gets its own vX.Y.Z tag, bumped by the [major], [minor] or [patch] keyword in its title.
-    # In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push,
-    # so concurrent runs agree on the tags. A push rejected over a taken tag name is recomputed and retried.
-    # Limitation: a tag pushed for an unrelated PR mid-run can leave a stack commit with two tags.
+    # In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push.
+    # Limitation: versions follow the order the runs are queued in, so a PR merged outside the stack around the
+    # same time can get a version out of commit order.
     - name: Tag the merged PRs
       env:
         GH_TOKEN: ${{ github.token }}
@@ -29,7 +34,6 @@ jobs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         OWN_BUMP: ${{ needs.extract_version_bump.outputs.version_bump }}
-        PUSH_ATTEMPTS: '5'
       run: |
         set -euo pipefail
         version_pattern='^v[0-9]+\.[0-9]+\.[0-9]+$'
@@ -49,14 +53,14 @@ jobs:
           fi
         }
 
-        # Print the version after $1 for the bump $2.
+        # Print the version after $1 for the bump $2. 10# reads components with leading zeros as decimal.
         next_version() {
           local major minor patch
           IFS=. read -r major minor patch <<< "${1#v}"
           case "$2" in
-            major) echo "v$((major + 1)).0.0" ;;
-            minor) echo "v$major.$((minor + 1)).0" ;;
-            patch) echo "v$major.$minor.$((patch + 1))" ;;
+            major) echo "v$((10#$major + 1)).0.0" ;;
+            minor) echo "v$((10#$major)).$((10#$minor + 1)).0" ;;
+            patch) echo "v$((10#$major)).$((10#$minor)).$((10#$patch + 1))" ;;
           esac
         }
 
@@ -85,7 +89,8 @@ jobs:
           done | sort -n
         }
 
-        # Print "sha<TAB>number<TAB>bump" for each merged PR at or below position $2 in the stack $1.
+        # Print "sha<TAB>number<TAB>bump" for each merged PR at or below position $2 in the stack $1 whose commit
+        # is in this run's history. The bump is "none" unless the title has exactly one keyword.
         stack_releases() {
           local prs position merged sha number title
           if ! prs=$(stack_prs "$1"); then
@@ -102,14 +107,28 @@ jobs:
           done <<< "$prs"
         }
 
+        # Print this PR's stack object, or "null" when it is in no stack. Print nothing, with a warning, when the
+        # token may not read PRs, and fail on any other error so that a re-run can tag the stack in order.
+        pr_stack() {
+          local errors
+          errors=$(mktemp)
+          if gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.stack' 2> "$errors"; then
+            return 0
+          fi
+          cat "$errors" >&2
+          if grep -E 'HTTP 404|Resource not accessible by integration' "$errors" > /dev/null; then
+            echo "::warning::Could not read PR #$PR_NUMBER. Grant the calling job 'pull-requests: read' to tag" \
+              "stacks in order. Tagging this PR on its own." >&2
+            return 0
+          fi
+          echo "::error::Could not read PR #$PR_NUMBER. Re-run this job." >&2
+          return 1
+        }
+
         # Print this run's releases: the merged PRs of its stack up to this one, or this PR alone.
         releases() {
           local stack
-          if ! stack=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.stack'); then
-            echo "::warning::Could not read PR #$PR_NUMBER. Grant the calling job 'pull-requests: read' to tag" \
-              "stacks in order. Tagging this PR on its own." >&2
-            stack=""
-          fi
+          stack=$(pr_stack) || exit 1
           if [[ -z "$stack" || "$stack" == "null" ]]; then
             printf '%s\t%s\t%s\n' "$MERGE_SHA" "$PR_NUMBER" "$OWN_BUMP"
             return
@@ -118,10 +137,9 @@ jobs:
         }
 
         # Plan a tag for each untagged release in the file $1, counting up from the latest version.
-        # Sets tag_names and refspecs.
+        # Sets refspecs to "sha:refs/tags/vX.Y.Z" for each planned tag.
         plan_tags() {
           local version sha number bump
-          tag_names=()
           refspecs=()
           version=$(latest_version)
           while IFS=$'\t' read -r sha number bump; do
@@ -134,43 +152,18 @@ jobs:
             fi
             version=$(next_version "$version" "$bump")
             echo "Tagging #$number ($sha) as $version"
-            tag_names+=("$version")
             refspecs+=("$sha:refs/tags/$version")
           done < "$1"
         }
 
-        # Succeed when another run has pushed one of the planned tag names.
-        lost_race() {
-          local name
-          git fetch --quiet --tags --force origin
-          for name in "${tag_names[@]}"; do
-            if git rev-parse --quiet --verify "refs/tags/$name" > /dev/null; then
-              return 0
-            fi
-          done
-          return 1
-        }
-
         release_list=$(mktemp)
         releases > "$release_list"
-        for ((attempt = 1; attempt <= PUSH_ATTEMPTS; attempt++)); do
-          git fetch --quiet --tags --force origin
-          plan_tags "$release_list"
-          if (( ${#refspecs[@]} == 0 )); then
-            echo "Nothing to tag."
-            exit 0
-          fi
-          if git push --atomic origin "${refspecs[@]}"; then
-            exit 0
-          fi
-          if ! lost_race; then
-            echo "::error::Could not push the version tags; see the git error above."
-            exit 1
-          fi
-          if (( attempt < PUSH_ATTEMPTS )); then
-            echo "Another run pushed one of these tags first; fetching the tags and trying again."
-            sleep $((RANDOM % 5 + 1))
-          fi
-        done
-        echo "::error::Other runs kept taking the version tags; gave up after $PUSH_ATTEMPTS attempts."
-        exit 1
+        plan_tags "$release_list"
+        if (( ${#refspecs[@]} == 0 )); then
+          echo "Nothing to tag."
+          exit 0
+        fi
+        if ! git push --atomic origin "${refspecs[@]}"; then
+          echo "::error::Could not push the version tags; see the git error above."
+          exit 1
+        fi
