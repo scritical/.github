@@ -9,6 +9,10 @@ on:
         type: string
         default: ""
         description: "Additional flags passed to 'pip install' (e.g. '--no-build-isolation')"
+      PIP_INSTALL_TARGET:
+        type: string
+        default: "."
+        description: "What 'pip install' installs before mypy runs: the repository (default) or, for a repository whose own install compiles code, a requirements file (e.g. '-r requirements-mypy.txt')"
     secrets:
       BW_ACCESS_TOKEN:
         required: true
@@ -35,7 +39,7 @@ jobs:
           docker exec \
             -e AGENT_NAME="${{ runner.name }}" \
             -e BUILD_REASON="${{ github.event_name }}" \
-            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} . && mypy"
+            app /bin/bash -c ". $BASHRC && cd $DOCKER_WORKING_DIR && pip install ${{ inputs.PIP_INSTALL_FLAGS }} ${{ inputs.PIP_INSTALL_TARGET }} && mypy"
 
       - name: Docker cleanup
         uses: scritical/.github/.github/actions/docker-cleanup@main
