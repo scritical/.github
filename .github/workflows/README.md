@@ -15,6 +15,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `ruff.yaml` | Python formatting and linting with Ruff |
 | `mypy.yaml` | Python type checking with MyPy |
 | `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-`, and fail a `doc-` pull request that changes a non-documentation path |
+| `bump_version.yaml` | Tag merged PRs with the next version from the `[major]`, `[minor]` or `[patch]` keyword in their titles |
 
 ---
 
@@ -237,6 +238,35 @@ A repository that skips jobs on the `doc-` prefix must do two things:
 - Run each check of the whole tree on a `doc-` pull request too. A check that reads every tracked file, such as a check for binary files, also reads the documentation paths. If the check runs only in a skipped job, move it to a job that runs on `doc-` pull requests.
 
 An organization ruleset can require the workflow on every pull request with no caller job, because the workflow also has a `pull_request` trigger.
+
+---
+
+### bump_version.yaml
+
+Tags the merge commit of a merged PR with the next `vX.Y.Z` version, bumped by the `[major]`, `[minor]` or `[patch]` keyword in the PR title.
+A PR whose title has no single keyword gets no tag and a warning, and the next tag covers it.
+Call it on `pull_request` events of type `closed`, and grant the calling job `contents: write` and `pull-requests: read`:
+
+```yaml
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  bump_version:
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: scritical/.github/.github/workflows/bump_version.yaml@main
+```
+
+Runs in a repository go one at a time, in the order they were queued.
+In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push, so a stack merged at once gets one tag per PR in commit order.
+A PR merged outside the stack around the same time can still get a version out of commit order.
+Without `pull-requests: read`, the run logs a warning and tags each PR on its own, so a stack merged at once can be tagged out of order.
 
 ## Setting Up Workflows
 
