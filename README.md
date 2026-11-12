@@ -30,4 +30,5 @@ This repo stores the following shared repository settings/configurations/templat
   - `tapenade`
   - `branch-name-check`
     - Branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-` (documentation only)
+    - A `doc-` pull request fails when it changes a path that `.github/doc-paths` does not list
 - Issue/PR labels shared across the organization

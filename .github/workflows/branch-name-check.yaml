@@ -1,5 +1,10 @@
 on:
   workflow_call:
+  # An organization ruleset can require this workflow on every pull request. It then runs with this trigger.
+  pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   check-branch-name:
@@ -36,3 +41,74 @@ jobs:
             echo "Branch name must start with 'feature-', 'bugfix-', 'hotfix-', or 'doc-' or be 'main'"
             exit 1
           fi
+
+  # A doc- branch holds a documentation-only change. A repository can skip its build and test jobs on that
+  # prefix. This job fails a doc- pull request that changes a path outside the documentation paths.
+  doc-only-check:
+    if: ${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'doc-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      # The checkout fetches the full history, because the diff below needs the merge base of the two branches.
+      # The clone leaves out the file contents of the history, because the diff reads commits and trees only.
+      # If the checkout did not download .github/doc-paths of the base commit, git fetches that file on the
+      # first read in the step below.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Check that the pull request changes documentation only
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git cat-file -e "${HEAD_SHA}^{commit}"
+
+          # The pull request cannot change the documentation paths, because the step reads them from the base
+          # commit.
+          # .github/doc-paths holds one git pathspec per line: "docs/" is a directory, and "*.md" matches in
+          # every directory. A line that starts with "#" is a comment.
+          # The file is required, because a default list can hold a path that a skipped job reads. git ls-tree
+          # finds the file in the tree of the base commit. A failed fetch of the file contents is then a
+          # separate failure.
+          doc_paths_entry="$(git ls-tree --name-only "${BASE_SHA}" -- .github/doc-paths)"
+          if [[ -z "${doc_paths_entry}" ]]; then
+            echo "error: the base branch has no .github/doc-paths file. Add the file to the base branch, with" >&2
+            echo "       one git pathspec per line, before you open a doc- pull request." >&2
+            exit 1
+          fi
+          doc_paths="$(git show "${BASE_SHA}:.github/doc-paths")"
+          mapfile -t patterns < <(printf '%s\n' "${doc_paths}" | sed -e 's/[[:space:]]*$//' | grep -v -e '^#' -e '^$' || true)
+          if ((${#patterns[@]} == 0)); then
+            echo "error: .github/doc-paths on the base branch holds no pathspec." >&2
+            exit 1
+          fi
+          echo "Documentation paths:"
+          printf '  %s\n' "${patterns[@]}"
+
+          # --no-renames lists a renamed file under both names.
+          changed=(git -c core.quotepath=off diff --name-only --no-renames "${BASE_SHA}...${HEAD_SHA}")
+          all="$("${changed[@]}")"
+          # An empty list means the diff is wrong, because a pull request changes at least one file.
+          if [[ -z "${all}" ]]; then
+            echo "error: the diff lists no changed path, so the doc- branch is not checked." >&2
+            exit 1
+          fi
+
+          excludes=()
+          for pattern in "${patterns[@]}"; do
+            excludes+=(":(exclude)${pattern}")
+          done
+          other="$("${changed[@]}" -- . "${excludes[@]}")"
+          if [[ -n "${other}" ]]; then
+            echo "error: a doc- branch changes documentation paths only. Move these paths to a feature- or" >&2
+            echo "       bugfix- branch:" >&2
+            printf '%s\n' "${other}" | sed 's/^/         /' >&2
+            exit 1
+          fi
+          echo "doc- branch: $(printf '%s\n' "${all}" | wc -l) changed path(s), all documentation."
