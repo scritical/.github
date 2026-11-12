@@ -110,9 +110,11 @@ jobs:
         # Print this PR's stack object, or "null" when it is in no stack. Print nothing, with a warning, when the
         # token may not read PRs, and fail on any other error so that a re-run can tag the stack in order.
         pr_stack() {
-          local errors
+          local errors stack
           errors=$(mktemp)
-          if gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.stack' 2> "$errors"; then
+          # On an HTTP error gh prints the error body to stdout, so print the output only when the call succeeds.
+          if stack=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.stack' 2> "$errors"); then
+            echo "$stack"
             return 0
           fi
           cat "$errors" >&2
