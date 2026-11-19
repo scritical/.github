@@ -264,6 +264,7 @@ jobs:
 ```
 
 Runs in a repository go one at a time, in the order they were queued.
+Only a merge commit on the default branch is tagged. The `branches` filter also matches a stacked PR merged into its parent branch, and that run tags nothing. Its changes ship in the parent PR's release, bumped by the parent's keyword alone, so give the parent the larger keyword.
 In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push, so a stack merged at once gets one tag per PR in commit order.
 A PR merged outside the stack around the same time can still get a version out of commit order.
 Without `pull-requests: read`, the run logs a warning and tags each PR on its own, so a stack merged at once can be tagged out of order.
