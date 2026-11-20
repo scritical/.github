@@ -38,6 +38,10 @@ Shared composite actions used by workflows and repository CI files.
 | `BW_ACCESS_TOKEN` | string | n/a | Bitwarden access token |
 | `DOCKER_RUN_ARGS` | string | `""` | Extra arguments for `docker run`, such as `--runtime=nvidia --gpus all` on a GPU runner |
 
+To test a PR against an unmerged docker change, add `Depends-On: scritical/docker#N` to its description.
+CI then runs on that docker PR's images instead of the published ones.
+After editing the description, push a commit, or close and reopen the PR: a re-run reuses the old description.
+
 ### docker-cleanup
 
 No inputs.
