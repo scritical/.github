@@ -50,45 +50,24 @@ runs:
         username: ${{ env.DOCKER_USERNAME }}
         password: ${{ env.DOCKER_OAT }}
 
-    - name: Select the image
+    - name: Select Docker image
+      id: image
       shell: bash
       env:
         DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
-        PR_BODY: ${{ github.event.pull_request.body }}
-        RUNNER_ARCH: ${{ runner.arch }}
       run: |
-        image="scritical/private-dev:$DOCKER_TAG"
-        # "Depends-On: scritical/docker#N" in the PR description selects docker PR N's images, which
-        # have per-platform tags only. Text after the reference is ignored. Read from the event
-        # payload, so a re-run sees the old description.
-        pr=$(printf '%s\n' "$PR_BODY" | tr -d '\r' \
-          | grep -ioP '^[ \t]*(?:[-*][ \t]+)?depends-on:[ \t]*(?:scritical/docker#|https://github\.com/scritical/docker/pull/)\K[0-9]+(?=/?(?:\s|$))' \
-          | sort -u || true)
-        if [[ $(wc -w <<< "$pr") -gt 1 ]]; then
-          echo "::error::More than one Depends-On line names a scritical/docker PR"
-          exit 1
-        fi
-        if [[ -n "$pr" ]]; then
-          case "$RUNNER_ARCH" in
-            X64) platform=amd64 ;;
-            ARM64) platform=arm64v8 ;;
-            *) echo "::error::No docker images are built for $RUNNER_ARCH"; exit 1 ;;
-          esac
-          image="scritical/private-dev:$DOCKER_TAG-pr$pr-$platform"
-          if ! docker manifest inspect "$image" > /dev/null 2>&1; then
-            echo "::error::$image does not exist yet. Re-run once scritical/docker#$pr has pushed its images."
-            exit 1
-          fi
-          echo "::warning::Running on scritical/docker#$pr's image $image, not the published one"
-        fi
-        echo "SCRITICAL_DOCKER_IMAGE=$image" >> "$GITHUB_ENV"
+        refs=$(python3 "$GITHUB_ACTION_PATH/../depends-on/depends_on.py")
+        image=$("$GITHUB_ACTION_PATH/select_image.sh" <<< "$refs")
+        echo "image=$image" >> "$GITHUB_OUTPUT"
 
     - name: Start Docker container
       shell: bash
+      env:
+        IMAGE: ${{ steps.image.outputs.image }}
       run: |
         docker run -t -d --name app --shm-size=2g ${{ inputs.DOCKER_RUN_ARGS }} \
           --mount "type=bind,src=${{ github.workspace }},target=${{ env.DOCKER_MOUNT_DIR }}" \
-          "$SCRITICAL_DOCKER_IMAGE" /bin/bash
+          "$IMAGE" /bin/bash
 
         # Copy repo to working directory
         docker exec app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && mkdir -p $DOCKER_WORKING_DIR && cp -a $DOCKER_MOUNT_DIR/. $DOCKER_WORKING_DIR/"
