@@ -243,7 +243,7 @@ An organization ruleset can require the workflow on every pull request with no c
 
 ### bump_version.yaml
 
-Tags the merge commit of a merged PR with the next `vX.Y.Z` version, bumped by the `[major]`, `[minor]` or `[patch]` keyword in the PR title.
+Tags the merge commit of a PR merged into the default branch with the next `vX.Y.Z` version, bumped by the `[major]`, `[minor]` or `[patch]` keyword in the PR title.
 A PR whose title has no single keyword gets no tag and a warning, and the next tag covers it.
 Call it on `pull_request` events of type `closed`, and grant the calling job `contents: write` and `pull-requests: read`:
 
@@ -264,6 +264,10 @@ jobs:
 ```
 
 Runs in a repository go one at a time, in the order they were queued.
+Only a merge commit on the default branch is tagged.
+The `branches` filter also matches a stacked PR merged into its parent branch. That run succeeds and tags nothing, so a caller job that reads the tag must handle its absence.
+The changes of that PR ship in the parent PR's release, bumped by the parent's keyword alone, so give the parent the larger keyword.
+Do not merge the parent with a merge commit: that puts the upper PR's commit on the default branch, and a later run or a re-run can tag the commit.
 In a stack, every run tags all untagged merged PRs at or below its own, in stack order, in one atomic push, so a stack merged at once gets one tag per PR in commit order.
 A PR merged outside the stack around the same time can still get a version out of commit order.
 Without `pull-requests: read`, the run logs a warning and tags each PR on its own, so a stack merged at once can be tagged out of order.
