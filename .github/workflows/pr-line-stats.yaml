@@ -1,0 +1,83 @@
+on:
+  workflow_call:
+    inputs:
+      TEST_REGEX:
+        type: string
+        default: ""
+        description: "Python regex; a changed file whose path matches it counts as a test file. Empty uses the default in pr_line_stats.py"
+      DOCS_REGEX:
+        type: string
+        default: ""
+        description: "Python regex; a changed file whose path matches it counts as a docs file, before the test check. Empty uses the default in pr_line_stats.py"
+      TIMEOUT:
+        type: number
+        default: 10
+        description: "Timeout for the job in minutes"
+  # An organization ruleset can require this workflow on every pull request. It then runs with this trigger and the
+  # input defaults below.
+  pull_request:
+
+jobs:
+  line-stats:
+    # The counts are measured against the pull request's base, so other events have nothing to report.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.TIMEOUT || 10 }}
+    permissions:
+      contents: read
+      pull-requests: write
+    # A newer push replaces the comment anyway, so an older run still in progress is cancelled.
+    concurrency:
+      group: pr-line-stats-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: project
+    steps:
+      # The full history is needed for the merge base.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          path: project
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Checkout org-wide scripts
+        uses: actions/checkout@v7
+        with:
+          repository: scritical/.github
+          path: .org-dotgithub
+          fetch-depth: 1
+
+      - name: Install cloc
+        run: sudo apt-get update && sudo apt-get install -y cloc
+
+      - name: Count changed lines
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TEST_REGEX: ${{ inputs.TEST_REGEX }}
+          DOCS_REGEX: ${{ inputs.DOCS_REGEX }}
+        run: |
+          set -euo pipefail
+          # Compare against the merge base, like the GitHub "Files changed" tab, so commits that landed on the
+          # base branch after the PR branched off are not counted.
+          merge_base="$(git merge-base "${BASE_SHA}" "${HEAD_SHA}")"
+          report="${RUNNER_TEMP}/cloc.json"
+          # cloc fails when both commits are the same, which happens for a PR with no changes.
+          if [[ "${merge_base}" == "${HEAD_SHA}" ]]; then
+            : > "${report}"
+          else
+            cloc --git-diff-rel --by-file --json --quiet "${merge_base}" "${HEAD_SHA}" > "${report}"
+          fi
+          python3 ../.org-dotgithub/pr_line_stats.py "${report}" \
+            --base "${merge_base}" --head "${HEAD_SHA}" --test-regex "${TEST_REGEX}" --docs-regex "${DOCS_REGEX}" \
+            > "${RUNNER_TEMP}/line-stats.md"
+          cat "${RUNNER_TEMP}/line-stats.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      # Posts one comment per PR and edits it in place on every later run, so it always shows the latest push.
+      - name: Post or update PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-line-stats
+          path: ${{ runner.temp }}/line-stats.md

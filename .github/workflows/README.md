@@ -15,6 +15,7 @@ Reusable GitHub Actions workflows for Supercritical repositories. These workflow
 | `ruff.yaml` | Python formatting and linting with Ruff |
 | `mypy.yaml` | Python type checking with MyPy |
 | `branch-name-check.yaml` | Enforce the branch prefixes: `feature-`, `bugfix-`, `hotfix-` and `doc-`, and fail a `doc-` pull request that changes a non-documentation path |
+| `pr-line-stats.yaml` | Comment on each PR with its added, modified and removed lines, split into source and test code and comments, and docs |
 | `bump_version.yaml` | Tag merged PRs with the next version from the `[major]`, `[minor]` or `[patch]` keyword in their titles |
 
 ---
@@ -238,6 +239,42 @@ A repository that skips jobs on the `doc-` prefix must do two things:
 - Run each check of the whole tree on a `doc-` pull request too. A check that reads every tracked file, such as a check for binary files, also reads the documentation paths. If the check runs only in a skipped job, move it to a job that runs on `doc-` pull requests.
 
 An organization ruleset can require the workflow on every pull request with no caller job, because the workflow also has a `pull_request` trigger.
+
+---
+
+### pr-line-stats.yaml
+
+Counts the lines a pull request changes with [cloc](https://github.com/AlDanial/cloc) and posts them as a table in a PR comment and in the job summary.
+The table splits the added, modified and removed lines into source code, source comments, test code, test comments and docs.
+The docs row holds both the code and comment lines of docs files, because cloc's split of prose formats such as reStructuredText and Markdown into code and comments is not meaningful.
+Each run edits the same comment, so the comment always shows the latest push.
+
+The counts run from the merge base of the PR to its head commit, like the "Files changed" tab.
+They leave out blank lines and files in languages cloc does not know.
+GitHub counts a modified line as one addition and one deletion, so its totals are the added plus modified lines and the removed plus modified lines.
+`pr_line_stats.py` at the root of this repository builds the table from the cloc report.
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `TEST_REGEX` | string | `""` | Python regex. A changed file whose path matches it counts as a test file. Empty uses `DEFAULT_TEST_REGEX` in `pr_line_stats.py`, which matches `test`, `tests` and `*_tests` directories, `test_*` files and `*_test.*` files |
+| `DOCS_REGEX` | string | `""` | Python regex. A changed file whose path matches it counts as a docs file, even if it also matches `TEST_REGEX`. Empty uses `DEFAULT_DOCS_REGEX` in `pr_line_stats.py`, which matches `doc` and `docs` directories and `*.md` and `*.rst` files |
+| `TIMEOUT` | number | `10` | Runtime allowed for the job, in minutes |
+
+The job needs `pull-requests: write` to post the comment. Call it on `pull_request` events:
+
+```yaml
+on:
+  pull_request:
+
+jobs:
+  line-stats:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: scritical/.github/.github/workflows/pr-line-stats.yaml@main
+```
+
+An organization ruleset can also require the workflow on every pull request with no caller job, because the workflow also has a `pull_request` trigger.
 
 ---
 
