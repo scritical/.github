@@ -56,8 +56,8 @@ runs:
       env:
         DOCKER_TAG: ${{ inputs.DOCKER_TAG }}
       run: |
-        refs=$(python3 "$GITHUB_ACTION_PATH/../depends-on/depends_on.py")
-        image=$("$GITHUB_ACTION_PATH/select_image.sh" <<< "$refs")
+        pull_requests=$(python3 "$GITHUB_ACTION_PATH/../depends-on/depends_on.py")
+        image=$("$GITHUB_ACTION_PATH/select_image.sh" <<< "$pull_requests")
         echo "image=$image" >> "$GITHUB_OUTPUT"
 
     - name: Start Docker container

@@ -11,9 +11,9 @@ inputs:
     default: ""
 
 outputs:
-  refs:
+  pull-requests:
     description: The referenced pull requests as owner/repo#N in lower case, one per line. Empty outside pull requests.
-    value: ${{ steps.parse.outputs.refs }}
+    value: ${{ steps.parse.outputs.pull-requests }}
 
 runs:
   using: composite
@@ -24,9 +24,5 @@ runs:
       env:
         DEPENDS_ON_TOKEN: ${{ inputs.token }}
       run: |
-        refs=$(python3 "$GITHUB_ACTION_PATH/depends_on.py")
-        if [[ -z "$refs" ]]; then
-          echo "refs=" >> "$GITHUB_OUTPUT"
-        else
-          printf 'refs<<DEPENDS_ON_EOF\n%s\nDEPENDS_ON_EOF\n' "$refs" >> "$GITHUB_OUTPUT"
-        fi
+        pull_requests=$(python3 "$GITHUB_ACTION_PATH/depends_on.py")
+        printf 'pull-requests<<DEPENDS_ON_EOF\n%s\nDEPENDS_ON_EOF\n' "$pull_requests" >> "$GITHUB_OUTPUT"

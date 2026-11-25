@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Print the image docker-setup starts: scritical/private-dev:$DOCKER_TAG, or the images of the docker PR
-# that a Depends-On reference on stdin names (owner/repo#N, one per line, from depends-on/depends_on.py).
+# Print the image docker-setup starts, from $DOCKER_TAG and the Depends-On references on stdin.
 set -euo pipefail
 
-mapfile -t docker_prs < <(grep -oP '^scritical/docker#\K[0-9]+$' || true)
+readonly IMAGE_REPOSITORY=scritical/private-dev
+readonly DOCKER_REPOSITORY=scritical/docker
+
+mapfile -t docker_prs < <(grep -oP "^${DOCKER_REPOSITORY}#\K[0-9]+$" || true)
 if (( ${#docker_prs[@]} == 0 )); then
-  echo "scritical/private-dev:$DOCKER_TAG"
+  echo "$IMAGE_REPOSITORY:$DOCKER_TAG"
   exit 0
 fi
 if (( ${#docker_prs[@]} > 1 )); then
-  echo "::error::The description names several docker PRs: ${docker_prs[*]/#/#}. Keep one Depends-On line for scritical/docker." >&2
+  echo "::error::The description names several docker PRs: ${docker_prs[*]/#/#}. Keep one Depends-On line for $DOCKER_REPOSITORY." >&2
   exit 1
 fi
 
@@ -23,12 +25,12 @@ case "$RUNNER_ARCH" in
     exit 1
     ;;
 esac
-image="scritical/private-dev:$DOCKER_TAG-pr$docker_pr-$platform"
+image="$IMAGE_REPOSITORY:$DOCKER_TAG-pr$docker_pr-$platform"
 
 if ! inspect_error=$(docker manifest inspect "$image" 2>&1 > /dev/null); then
   echo "::error::Cannot read image $image: $inspect_error" >&2
-  echo "::error::If scritical/docker#$docker_pr has not pushed its images yet, re-run this job after it has. If its image build failed, or the number is wrong, fix the Depends-On line." >&2
+  echo "::error::If $DOCKER_REPOSITORY#$docker_pr has not pushed its images yet, re-run this job after it has. If its image build failed, fix that docker PR. If the number is wrong, fix the Depends-On line." >&2
   exit 1
 fi
-echo "::warning::This job runs on the image of scritical/docker#$docker_pr ($image), not on the published image. The tag holds that docker PR's latest pushed build, even after the PR merges or closes. Remove the Depends-On line when the docker PR merges." >&2
+echo "::warning::This job runs on the image of $DOCKER_REPOSITORY#$docker_pr ($image), not on the published image. The tag holds that docker PR's latest pushed build, even after the PR merges or closes. Remove the Depends-On line when the docker PR merges." >&2
 echo "$image"
