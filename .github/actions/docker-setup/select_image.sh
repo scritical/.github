@@ -5,7 +5,12 @@ set -euo pipefail
 readonly IMAGE_REPOSITORY=scritical/private-dev
 readonly DOCKER_REPOSITORY=scritical/docker
 
-mapfile -t docker_prs < <(grep -oP "^${DOCKER_REPOSITORY}#\K[0-9]+$" || true)
+docker_prs=()
+while read -r reference || [[ -n $reference ]]; do
+  if [[ $reference =~ ^${DOCKER_REPOSITORY}#([0-9]+)$ ]]; then
+    docker_prs+=("${BASH_REMATCH[1]}")
+  fi
+done
 if (( ${#docker_prs[@]} == 0 )); then
   echo "$IMAGE_REPOSITORY:$DOCKER_TAG"
   exit 0

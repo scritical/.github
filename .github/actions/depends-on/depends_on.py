@@ -16,9 +16,11 @@ _SHORTHAND_PULL_REQUEST = re.compile(rf"({_OWNER_OR_REPOSITORY})/({_OWNER_OR_REP
 _URL_PULL_REQUEST = re.compile(rf"https://github\.com/({_OWNER_OR_REPOSITORY})/({_OWNER_OR_REPOSITORY})/pull/(\d+)/?")
 _DEPENDS_ON_LINE = re.compile(r" {0,3}(?:[-*][ \t]+)?depends-on:[ \t]*(\S+)[ \t]*", re.IGNORECASE)
 # Anything a reader could take for a Depends-On line: a bullet, task box, heading, quote, bold or italic marker,
-# "Depends on", "Depends_On" or another dash, or a space before the colon
+# "Depends on", "Depends_On" or another dash, a space before the colon, or no colon before a reference
 _LOOKS_LIKE_DEPENDS_ON = re.compile(
-    r"[\s>#*+-]*(?:\[[ xX]\]\s*)?(?:\d+[.)]\s*)?[*_]*\s*depends[\s_‐-―-]*on\s*[*_]*\s*:", re.IGNORECASE
+    r"[\s>#*+-]*(?:\[[ xX]\]\s*)?(?:\d+[.)]\s*)?[*_]*\s*depends[\s_‐-―-]*on"
+    r"(?:\s*[*_]*\s*:|\s+(?:[\w.-]+/[\w.-]+#\d|https?://))",
+    re.IGNORECASE,
 )
 _COMMENT_BLOCK_START = re.compile(r" {0,3}<!--")
 # Applied to one line at a time; DOTALL only satisfies CodeQL's py/bad-tag-filter
@@ -30,6 +32,7 @@ _ACCEPT_HEADER = "application/vnd.github+json"
 _TIMEOUT_SECONDS = 30
 _EXPECTED_FORM = (
     "Write it as 'Depends-On: OWNER/REPO#N' or 'Depends-On: https://github.com/OWNER/REPO/pull/N', alone on its line"
+    " and indented by at most 3 spaces"
 )
 
 
@@ -78,31 +81,76 @@ def _visible_lines(description: str) -> list[str]:
     Returns
     -------
     list of str
-        The lines outside fenced code blocks and HTML comment blocks, with inline comments removed.
+        The lines outside fenced code blocks and HTML comments.
     """
     lines = description.splitlines()
     visible: list[str] = []
     fence = None
-    in_comment = False
     index = 0
     while index < len(lines):
         line = lines[index]
-        if in_comment:
-            in_comment = "-->" not in line
-        elif fence is not None:
-            match = _FENCE.match(line)
-            if match and match[1][0] == fence[0] and len(match[1]) >= len(fence) and not line[match.end() :].strip():
-                fence = None
+        if fence is not None:
+            fence = None if _closes_fence(line, fence) else fence
+            index += 1
         elif match := _FENCE.match(line):
             fence = match[1]
+            index += 1
         elif _COMMENT_BLOCK_START.match(line):
-            in_comment = "-->" not in line[line.index("<!--") + 2 :]
+            index = _after_comment_block(lines, index)
         else:
             text, index = _paragraph_line(lines, index)
             visible.append(text)
-            continue
-        index += 1
     return visible
+
+
+def _closes_fence(line: str, fence: str) -> bool:
+    """Return whether *line* closes the code block that *fence* opened.
+
+    Parameters
+    ----------
+    line : str
+        A line inside the code block.
+    fence : str
+        The backticks or tildes that opened it.
+
+    Returns
+    -------
+    bool
+        True for a fence of the same character, at least as long, with nothing after it.
+    """
+    match = _FENCE.match(line)
+    return bool(match) and match[1][0] == fence[0] and len(match[1]) >= len(fence) and not line[match.end() :].strip()
+
+
+def _after_comment_block(lines: list[str], index: int) -> int:
+    """Return the index of the next line to read after the HTML comment block that starts at *index*.
+
+    The block ends on the line holding ``-->``. The page shows what follows ``-->`` on that line, so that text
+    replaces the line in *lines*, to be read next.
+
+    Parameters
+    ----------
+    lines : list of str
+        Lines of the description; the closing line may be replaced.
+    index : int
+        Index of the line that opens the block.
+
+    Returns
+    -------
+    int
+        Index of the next line to read.
+    """
+    # Searching from the second dash of "<!--" lets "<!-->" and "<!--->" close at once
+    start = lines[index].index("<!--") + 2
+    for end in range(index, len(lines)):
+        closing = lines[end].find("-->", start if end == index else 0)
+        if closing >= 0:
+            rest = lines[end][closing + 3 :]
+            if not rest.strip():
+                return end + 1
+            lines[end] = rest
+            return end
+    return len(lines)
 
 
 def _paragraph_line(lines: list[str], index: int) -> tuple[str, int]:
@@ -198,7 +246,7 @@ def _parse_line(line: str) -> str:
         _SHORTHAND_PULL_REQUEST.fullmatch(depends_on_match[1]) or _URL_PULL_REQUEST.fullmatch(depends_on_match[1])
     )
     if not pull_request_match:
-        raise DependsOnError(f"Cannot read {line.strip()!r}. {_EXPECTED_FORM}.")
+        raise DependsOnError(f"Cannot read {line.rstrip()!r}. {_EXPECTED_FORM}.")
     owner, repo, number = pull_request_match.groups()
     return f"{owner}/{repo}#{int(number)}".lower()
 

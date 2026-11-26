@@ -66,6 +66,8 @@ def test_accepted_line(line: str, reference: str) -> None:
         "Depends-On : scritical/sr-foilgen#28",
         "    Depends-On: scritical/sr-foilgen#28",
         "\tDepends-On: scritical/sr-foilgen#28",
+        "Depends-On scritical/sr-foilgen#28",
+        "Depends on https://github.com/scritical/sr-foilgen/pull/28",
     ],
 )
 def test_malformed_line_is_an_error(line: str) -> None:
@@ -74,7 +76,14 @@ def test_malformed_line_is_an_error(line: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "description", ["", "This change depends on: the lock refactor\n", "Needed by scritical/sr-foilgen#28.\n"]
+    "description",
+    [
+        "",
+        "This change depends on: the lock refactor\n",
+        "Needed by scritical/sr-foilgen#28.\n",
+        "### Depends on\n",
+        "**Depends on the A4 fix**\n",
+    ],
 )
 def test_description_without_a_depends_on_line(description: str) -> None:
     assert depends_on.parse_depends_on(description) == []
@@ -142,6 +151,23 @@ def test_line_the_page_shows_is_read(before: str) -> None:
 )
 def test_inline_comment_hides_only_lines_up_to_its_end_within_the_paragraph(description: str) -> None:
     assert depends_on.parse_depends_on(description) == ["scritical/docker#133"]
+
+
+@pytest.mark.parametrize(
+    "description",
+    [
+        "<!-- PRs this needs --> Depends-On: scritical/docker#133",
+        "<!--\nnote\n--> Depends-On: scritical/docker#133",
+        "<!-- a --> <!-- b -->Depends-On: scritical/docker#133",
+    ],
+)
+def test_text_after_a_comment_block_is_read(description: str) -> None:
+    assert depends_on.parse_depends_on(description) == ["scritical/docker#133"]
+
+
+def test_error_quotes_the_indent_of_the_line() -> None:
+    with pytest.raises(depends_on.DependsOnError, match="'    - Depends-On: .*indented by at most 3 spaces"):
+        depends_on.parse_depends_on("- Dependencies\n    - Depends-On: scritical/docker#133\n")
 
 
 def test_event_without_a_pull_request_prints_nothing(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:

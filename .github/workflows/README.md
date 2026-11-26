@@ -69,8 +69,8 @@ A `Depends-On` line is the reference alone, optionally as a `-` or `*` bullet:
     Depends-On: scritical/sr-foilgen#28
     - Depends-On: https://github.com/scritical/sr-foilgen/pull/28
 
-- Letter case does not matter. Lines inside HTML comments (`<!-- -->`) and fenced code blocks are skipped, as the PR page hides them, so commenting a line out disables it.
-- The job fails on a line that looks like `Depends-On` in another form, such as `**Depends-On:**`, `Depends on:`, a numbered bullet, a task-list item, a line indented as code, or a reference with text after it.
+- Letter case does not matter. Lines inside HTML comments (`<!-- -->`) and fenced code blocks are skipped, so commenting a line out disables it, and so does showing it as code.
+- The job fails on a line that looks like `Depends-On` in another form, such as `**Depends-On:**`, `Depends on:`, a numbered bullet, a task-list item, a line indented as code, a missing colon, or a reference with text after it.
 
 ### docker-cleanup
 
