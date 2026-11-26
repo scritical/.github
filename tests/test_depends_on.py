@@ -101,6 +101,10 @@ def test_references_keep_their_order_without_repeats() -> None:
         "~~~~text\nDepends-On: scritical/docker#133\n~~~\nDepends-On: not closed by a shorter fence\n~~~~",
         "```\n~~~\nDepends-On: not closed by the other fence character\n```",
         "```\n``` text\nDepends-On: not closed by a fence with text after it\n```",
+        "Text <!--\nDepends-On: scritical/docker#133\n-->",
+        "Text <!-- note\nDepends-On: scritical/docker#133\nend --> more text",
+        "Text <!--\nnote --> Depends-On: scritical/docker#133",
+        "Text <!-- a\nb --> c <!--\nDepends-On: scritical/docker#133\n-->",
     ],
 )
 def test_lines_the_page_does_not_show_are_skipped(hidden: str) -> None:
@@ -124,6 +128,19 @@ def test_lines_the_page_does_not_show_are_skipped(hidden: str) -> None:
 )
 def test_line_the_page_shows_is_read(before: str) -> None:
     description = f"{before}\nDepends-On: scritical/docker#133\n"
+    assert depends_on.parse_depends_on(description) == ["scritical/docker#133"]
+
+
+@pytest.mark.parametrize(
+    "description",
+    [
+        "Text <!--\n\nDepends-On: scritical/docker#133\n-->",
+        "Text <!--\n```\n```\nDepends-On: scritical/docker#133\n-->",
+        "Use `<!--` to start a comment.\nDepends-On: scritical/docker#133\n-->",
+        "Text <!--\nnote -->\nDepends-On: scritical/docker#133",
+    ],
+)
+def test_inline_comment_hides_only_lines_up_to_its_end_within_the_paragraph(description: str) -> None:
     assert depends_on.parse_depends_on(description) == ["scritical/docker#133"]
 
 

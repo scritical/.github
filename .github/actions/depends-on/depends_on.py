@@ -24,6 +24,7 @@ _COMMENT_BLOCK_START = re.compile(r" {0,3}<!--")
 # Applied to one line at a time; DOTALL only satisfies CodeQL's py/bad-tag-filter
 _CLOSED_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _FENCE = re.compile(r" {0,3}(`{3,}(?=[^`]*$)|~{3,})")
+_CODE_SPAN = re.compile(r"(`+).+?(?<!`)\1(?!`)")
 _DEFAULT_API_URL = "https://api.github.com"
 _ACCEPT_HEADER = "application/vnd.github+json"
 _TIMEOUT_SECONDS = 30
@@ -77,12 +78,15 @@ def _visible_lines(description: str) -> list[str]:
     Returns
     -------
     list of str
-        The lines outside fenced code blocks and HTML comment blocks, with closed inline comments removed.
+        The lines outside fenced code blocks and HTML comment blocks, with inline comments removed.
     """
-    lines: list[str] = []
+    lines = description.splitlines()
+    visible: list[str] = []
     fence = None
     in_comment = False
-    for line in description.splitlines():
+    index = 0
+    while index < len(lines):
+        line = lines[index]
         if in_comment:
             in_comment = "-->" not in line
         elif fence is not None:
@@ -94,8 +98,81 @@ def _visible_lines(description: str) -> list[str]:
         elif _COMMENT_BLOCK_START.match(line):
             in_comment = "-->" not in line[line.index("<!--") + 2 :]
         else:
-            lines.append(_CLOSED_COMMENT.sub("", line))
-    return lines
+            text, index = _paragraph_line(lines, index)
+            visible.append(text)
+            continue
+        index += 1
+    return visible
+
+
+def _paragraph_line(lines: list[str], index: int) -> tuple[str, int]:
+    """Return the text the page shows for a paragraph line, joined with what follows a comment it opens.
+
+    An inline comment may close on a later line of its paragraph. The page then shows the text before the comment
+    and the text after it as one line.
+
+    Parameters
+    ----------
+    lines : list of str
+        Lines of the description.
+    index : int
+        Index of the paragraph line.
+
+    Returns
+    -------
+    tuple of str and int
+        The visible text, and the index of the next line to read.
+    """
+    text = lines[index]
+    index += 1
+    while True:
+        text = _CLOSED_COMMENT.sub("", text)
+        start = _comment_opening(text)
+        end = None if start is None else _comment_closing_line(lines, index)
+        if end is None:
+            return text, index
+        text = text[:start] + lines[end].split("-->", 1)[1]
+        index = end + 1
+
+
+def _comment_opening(text: str) -> int | None:
+    """Return where an unclosed ``<!--`` outside inline code starts in *text*, or None.
+
+    Parameters
+    ----------
+    text : str
+        A paragraph line without closed comments.
+
+    Returns
+    -------
+    int or None
+        Index of the ``<!--``.
+    """
+    start = _CODE_SPAN.sub(lambda span: " " * len(span[0]), text).find("<!--")
+    return None if start < 0 else start
+
+
+def _comment_closing_line(lines: list[str], index: int) -> int | None:
+    """Return the index of the line holding ``-->``, if it comes before the paragraph ends.
+
+    Parameters
+    ----------
+    lines : list of str
+        Lines of the description.
+    index : int
+        Index of the first line after the one that opens the comment.
+
+    Returns
+    -------
+    int or None
+        Index of the closing line; None when a blank line, a fence or the end of the description comes first.
+    """
+    for later in range(index, len(lines)):
+        if not lines[later].strip() or _FENCE.match(lines[later]):
+            return None
+        if "-->" in lines[later]:
+            return later
+    return None
 
 
 def _parse_line(line: str) -> str:
