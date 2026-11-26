@@ -21,7 +21,8 @@ _LOOKS_LIKE_DEPENDS_ON = re.compile(
     r"[\s>#*+-]*(?:\[[ xX]\]\s*)?(?:\d+[.)]\s*)?[*_]*\s*depends[\s_‐-―-]*on\s*[*_]*\s*:", re.IGNORECASE
 )
 _COMMENT_BLOCK_START = re.compile(r" {0,3}<!--")
-_CLOSED_COMMENT = re.compile(r"<!--.*?-->")
+# Applied to one line at a time; DOTALL only satisfies CodeQL's py/bad-tag-filter
+_CLOSED_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _FENCE = re.compile(r" {0,3}(`{3,}(?=[^`]*$)|~{3,})")
 _DEFAULT_API_URL = "https://api.github.com"
 _ACCEPT_HEADER = "application/vnd.github+json"
