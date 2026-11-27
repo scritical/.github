@@ -1,0 +1,28 @@
+name: Depends-On
+
+description: Output the pull requests that the Depends-On lines of this pull request's description name.
+
+inputs:
+  token:
+    description: >-
+      Token that can read this repository's pull requests. With it, the description is read through the API, so a
+      re-run sees an edited description. Without it, the description comes from the event payload, which a re-run reuses.
+    required: false
+    default: ""
+
+outputs:
+  pull-requests:
+    description: The referenced pull requests as owner/repo#N in lower case, one per line. Empty outside pull requests.
+    value: ${{ steps.parse.outputs.pull-requests }}
+
+runs:
+  using: composite
+  steps:
+    - name: Read Depends-On lines
+      id: parse
+      shell: bash
+      env:
+        DEPENDS_ON_TOKEN: ${{ inputs.token }}
+      run: |
+        pull_requests=$(python3 "$GITHUB_ACTION_PATH/depends_on.py")
+        printf 'pull-requests<<DEPENDS_ON_EOF\n%s\nDEPENDS_ON_EOF\n' "$pull_requests" >> "$GITHUB_OUTPUT"

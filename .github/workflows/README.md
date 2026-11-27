@@ -27,6 +27,9 @@ Shared composite actions used by workflows and repository CI files.
 | :----- | :---------- |
 | `docker-setup` | Set Docker env vars, login, and start the container |
 | `docker-cleanup` | Stop and remove the container |
+| `depends-on` | Output the pull requests that the `Depends-On` lines of the PR description name |
+
+`tests/` holds the tests of the action scripts. `test-actions.yaml` runs them, and the `depends-on` action itself, on every pull request to this repository.
 
 ### docker-setup
 
@@ -37,6 +40,37 @@ Shared composite actions used by workflows and repository CI files.
 | `DOCKER_TAG` | string | n/a | Docker image tag to use |
 | `BW_ACCESS_TOKEN` | string | n/a | Bitwarden access token |
 | `DOCKER_RUN_ARGS` | string | `""` | Extra arguments for `docker run`, such as `--runtime=nvidia --gpus all` on a GPU runner |
+
+The runner needs `bash`, `docker`, and `python3` on the host. The action reads the PR description with `python3` before it starts the container.
+
+#### Testing a repository PR against an unmerged docker change
+
+Repository CI runs on the published `u24-*-latest` images, which change only when docker's build on `main` publishes them.
+To run a repository PR on the images of an open docker PR, put this line in the PR description:
+
+    Depends-On: scritical/docker#123
+
+- The job starts the container from `scritical/private-dev:<DOCKER_TAG>-pr<N>-<platform>`, for example `u24-gcc-ompi-latest-pr123-amd64`, and shows a warning that names it. The platform is `amd64` on an X64 runner and `arm64v8` on an ARM64 runner.
+- The docker PR pushes this image when its image build passes, even if its regression tests fail, and keeps the tag after it merges or closes. If the job cannot read the image, it fails and prints the docker error. For a missing tag, re-run the job after the docker PR has pushed its images.
+- Name one docker PR. The job fails when the description names two different docker PRs. `docker-setup` ignores references to other repositories.
+- `docker-setup` reads the description from the event payload, because the caller workflows do not give their `GITHUB_TOKEN` `pull-requests: read`. A re-run reuses the old description, so after editing it, push a commit, or close and reopen the PR.
+- PRs without the line, and pushes to `main`, use the published image. From the repository PR's merge until the docker PR's `main` build publishes, the repository's `main` CI runs without the docker change and can fail. Remove the line when the docker PR merges.
+
+### depends-on
+
+| Name | Type | Default | Description |
+| :--- | :--- | :------ | :---------- |
+| `token` | string | `""` | Token that can read this repository's pull requests. With it, the description is read through the API, so a re-run sees an edited description. Without it, the description comes from the event payload, which a re-run reuses. |
+
+Output `pull-requests`: the referenced pull requests as `owner/repo#N` in lower case, one per line, without repeats. Empty outside pull requests. `docker-setup` runs the same script.
+
+A `Depends-On` line is the reference alone, optionally as a `-` or `*` bullet:
+
+    Depends-On: scritical/sr-foilgen#28
+    - Depends-On: https://github.com/scritical/sr-foilgen/pull/28
+
+- Letter case does not matter. Lines inside HTML comments (`<!-- -->`) and fenced code blocks are skipped, so commenting a line out disables it, and so does showing it as code.
+- The job fails on a line that looks like `Depends-On` in another form, such as `**Depends-On:**`, `Depends on:`, a numbered bullet, a task-list item, a line indented as code, a missing colon, or a reference with text after it.
 
 ### docker-cleanup
 
